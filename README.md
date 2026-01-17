@@ -159,13 +159,4 @@ Is it stable for 6-12 months?
 
 ---
 
-## Source Materials
-
-This documentation synthesizes and organizes content from:
-- [Cursor Data Science Research](cursor_data_science_research.md) — feature deep-dives
-- [Decision Flow](cursor_decion_flow.md) — knowledge classification framework
-- [Playbook v4](cursor_playbook_v4.md) — system architecture and mental models
-
----
-
 *Last updated: January 2026*
