@@ -1,0 +1,42 @@
+---
+description: [Brief description under 100 chars]
+globs: "**/*.py"
+alwaysApply: false
+---
+
+# [Rule Title]
+
+Brief overview of what this rule covers and when it applies.
+
+## Requirements
+
+- Requirement 1
+- Requirement 2
+- Requirement 3
+
+## Patterns
+
+### Good Pattern
+
+```python
+# Example of the correct approach
+def example_function(param: str) -> dict:
+    """Docstring explaining purpose."""
+    result = process(param)
+    return {"status": "success", "data": result}
+```
+
+### Bad Pattern
+
+```python
+# Example of what to avoid
+def example_function(param):
+    # Missing type hints, no docstring
+    return process(param)
+```
+
+## Exceptions
+
+Situations where this rule may not apply:
+- Exception case 1
+- Exception case 2
