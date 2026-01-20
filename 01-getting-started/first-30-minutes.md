@@ -81,7 +81,6 @@ def calculate_average(values: list[float]) -> float:
         raise ValueError("Cannot calculate average of empty list")
     return sum(values) / len(values)
 ```
-```
 
 ### Step 3: Test the Rule
 
