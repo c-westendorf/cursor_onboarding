@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>From Instinct to Infrastructure — Skills & the Consumer Growth Framework</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0c0c10;
+    --surface: #14141a;
+    --surface2: #1c1c26;
+    --border: #2a2a3a;
+    --accent: #7c6af7;
+    --accent2: #f76a8a;
+    --accent3: #6af7c4;
+    --text: #e8e8f0;
+    --muted: #6a6a82;
+    --tag-bg: #1e1e2e;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* NAV */
+  .nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 32px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+    z-index: 100;
+  }
+
+  .nav-left {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+
+  .slide-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .slide-dot.active { background: var(--accent); transform: scale(1.4); }
+  .slide-dot:hover { background: var(--muted); }
+
+  .nav-center {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .nav-right {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+
+  .btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 7px 16px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn.primary:hover { background: #9180f9; }
+
+  /* SLIDES */
+  .slides-container {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: 48px 60px;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    overflow-y: auto;
+    animation: fadeIn 0.4s ease;
+  }
+  .slide.active { display: flex; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SLIDE COMPONENTS */
+  .tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tag::before {
+    content: '';
+    display: block;
+    width: 20px; height: 1px;
+    background: var(--accent);
+  }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(36px, 5vw, 60px);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -1px;
+    margin-bottom: 20px;
+  }
+
+  h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(26px, 3.5vw, 42px);
+    font-weight: 700;
+    line-height: 1.1;
+    margin-bottom: 16px;
+  }
+
+  h3 {
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 17px;
+    color: var(--muted);
+    line-height: 1.7;
+    max-width: 620px;
+    margin-bottom: 36px;
+  }
+
+  .accent-word { color: var(--accent); }
+  .accent2-word { color: var(--accent2); }
+  .accent3-word { color: var(--accent3); }
+
+  /* GRID LAYOUTS */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .card.purple::before { background: var(--accent); }
+  .card.pink::before { background: var(--accent2); }
+  .card.green::before { background: var(--accent3); }
+
+  .card-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  /* CODE BLOCK */
+  .code-block {
+    background: #0a0a0e;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 20px 24px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    line-height: 1.8;
+    color: #c0c0d8;
+    position: relative;
+  }
+  .code-block .comment { color: var(--muted); }
+  .code-block .key { color: var(--accent); }
+  .code-block .val { color: var(--accent3); }
+  .code-block .string { color: var(--accent2); }
+  .code-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  /* STACK DIAGRAM */
+  .stack {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 500px;
+  }
+  .stack-layer {
+    padding: 18px 24px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+  .stack-layer:hover { border-color: var(--accent); transform: translateX(4px); }
+  .stack-layer.layer-1 { background: rgba(124, 106, 247, 0.12); border-color: rgba(124,106,247,0.3); }
+  .stack-layer.layer-2 { background: rgba(247, 106, 138, 0.10); border-color: rgba(247,106,138,0.3); }
+  .stack-layer.layer-3 { background: rgba(106, 247, 196, 0.08); border-color: rgba(106,247,196,0.3); }
+  .layer-name { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; }
+  .layer-desc { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+  .layer-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .badge-purple { background: rgba(124,106,247,0.2); color: var(--accent); }
+  .badge-pink { background: rgba(247,106,138,0.2); color: var(--accent2); }
+  .badge-green { background: rgba(106,247,196,0.2); color: var(--accent3); }
+
+  /* FLOW DIAGRAM */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+  }
+  .flow-step {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    text-align: center;
+    min-width: 130px;
+    transition: all 0.2s;
+    cursor: default;
+  }
+  .flow-step:hover { border-color: var(--accent); }
+  .flow-step .step-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .flow-step .step-label {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .flow-arrow {
+    font-size: 18px;
+    color: var(--muted);
+    padding: 0 8px;
+  }
+
+  /* ROUTING VIZ */
+  .router-box {
+    background: var(--surface2);
+    border: 2px solid var(--accent);
+    border-radius: 10px;
+    padding: 20px 28px;
+    text-align: center;
+    position: relative;
+  }
+  .router-glow {
+    position: absolute;
+    inset: -8px;
+    border-radius: 14px;
+    background: radial-gradient(ellipse at center, rgba(124,106,247,0.15) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  /* TAKEAWAY BOX */
+  .takeaway {
+    background: linear-gradient(135deg, rgba(124,106,247,0.15), rgba(106,247,196,0.08));
+    border: 1px solid rgba(124,106,247,0.4);
+    border-radius: 12px;
+    padding: 28px 32px;
+    margin-top: 24px;
+  }
+  .takeaway-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+  }
+
+  /* AGENDA LIST */
+  .agenda-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .agenda-item:last-child { border-bottom: none; }
+  .agenda-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    min-width: 60px;
+    padding-top: 2px;
+  }
+  .agenda-title { font-weight: 500; margin-bottom: 2px; }
+  .agenda-sub { font-size: 13px; color: var(--muted); }
+
+  /* COMPARISON TABLE */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+  .compare-table th {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    padding: 10px 16px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  .compare-table td {
+    padding: 13px 16px;
+    border-bottom: 1px solid rgba(42,42,58,0.5);
+    vertical-align: top;
+  }
+  .compare-table tr:hover td { background: rgba(124,106,247,0.04); }
+
+  /* TOOLTIP */
+  [data-tooltip] { cursor: help; border-bottom: 1px dashed var(--muted); }
+
+  /* SLIDE COUNTER */
+  .slide-counter {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  /* PROGRESS BAR */
+  .progress-bar {
+    height: 2px;
+    background: var(--border);
+    flex-shrink: 0;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+    transition: width 0.4s ease;
+  }
+
+  /* HANDOFF SECTION */
+  .handoff-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-top: 20px;
+  }
+  .handoff-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 18px 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .handoff-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  /* HIGHLIGHT QUOTE */
+  .big-quote {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(20px, 2.5vw, 30px);
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--text);
+    border-left: 3px solid var(--accent);
+    padding-left: 24px;
+    margin: 24px 0;
+  }
+
+  /* INTERACTIVE TABS */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+  .tab-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 8px 16px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+  }
+  .tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* SKILL ANATOMY */
+  .skill-section {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 8px;
+  }
+  .skill-header {
+    background: var(--surface2);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+  }
+  .skill-header:hover { background: rgba(124,106,247,0.1); }
+  .skill-body {
+    padding: 16px;
+    font-size: 13px;
+    line-height: 1.7;
+    color: var(--muted);
+    border-top: 1px solid var(--border);
+    display: none;
+  }
+  .skill-body.open { display: block; }
+</style>
+</head>
+<body>
+
+<div class="nav">
+  <div class="nav-left" id="dots"></div>
+  <div class="nav-center" id="slideTitle">From Instinct to Infrastructure</div>
+  <div class="nav-right">
+    <span class="slide-counter"><span id="current">1</span> / <span id="total">9</span></span>
+    <button class="btn" onclick="prevSlide()">← Prev</button>
+    <button class="btn primary" onclick="nextSlide()">Next →</button>
+  </div>
+</div>
+
+<div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+<div class="slides-container">
+
+  <!-- SLIDE 1: TITLE -->
+  <div class="slide active" data-title="Title">
+    <div class="tag">Consumer Insights Team · Skills Workshop</div>
+    <h1>From <span class="accent-word">Instinct</span><br>to <span class="accent3-word">Infrastructure</span></h1>
+    <p class="subtitle">You already route decisions, scope problems, and deliver insights every week. Today we make that explicit — and show how it becomes the foundation of the Consumer Growth Framework.</p>
+    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+      <div class="card purple" style="flex:1; min-width:180px;">
+        <div class="card-label">30 min session</div>
+        <h3>3 things you'll leave with</h3>
+        <div style="margin-top:10px; display:flex; flex-direction:column; gap:8px; font-size:14px; color:var(--muted);">
+          <div>→ What a <span style="color:var(--text)">Skill</span> actually is</div>
+          <div>→ How <span style="color:var(--text)">routing</span> makes agents smart</div>
+          <div>→ A skill you could <span style="color:var(--text)">build tomorrow</span></div>
+        </div>
+      </div>
+      <div class="card green" style="flex:1; min-width:180px;">
+        <div class="card-label">The arc</div>
+        <h3>Your day → a skill → CGF</h3>
+        <div style="margin-top:10px; font-size:14px; color:var(--muted); line-height:1.7;">
+          We start with your instincts. We end with the agent infrastructure we're building together.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: AGENDA -->
+  <div class="slide" data-title="Agenda">
+    <div class="tag">Session Plan</div>
+    <h2>30 Minutes, <span class="accent-word">One Big Idea</span></h2>
+    <p class="subtitle" style="margin-bottom:16px;">Each block builds on the last. We're installing a mental model, not covering a spec doc.</p>
+    <div>
+      <div class="agenda-item">
+        <div class="agenda-time">0–5 min</div>
+        <div>
+          <div class="agenda-title">The framing: You already do this</div>
+          <div class="agenda-sub">Your Monday morning is a workflow. We just haven't named it yet.</div>
+        </div>
+      </div>
+      <div class="agenda-item">
+        <div class="agenda-time">5–12 min</div>
+        <div>
+          <div class="agenda-title">The 3-layer stack: Rules → Skills → Code</div>
+          <div class="agenda-sub">The architecture behind every automated agent — explained from the inside out.</div>
+        </div>
+      </div>
+      <div class="agenda-item">
+        <div class="agenda-time">12–20 min</div>
+        <div>
+          <div class="agenda-title">Routing: the secret ingredient</div>
+          <div class="agenda-sub">How does an agent know which skill to call? You'll play the router.</div>
+        </div>
+      </div>
+      <div class="agenda-item">
+        <div class="agenda-time">20–27 min</div>
+        <div>
+          <div class="agenda-title">CGF in context: Question → Insight</div>
+          <div class="agenda-sub">How all of this maps to the Consumer Growth Framework and our real workstreams.</div>
+        </div>
+      </div>
+      <div class="agenda-item">
+        <div class="agenda-time">27–30 min</div>
+        <div>
+          <div class="agenda-title">Your first skill: build one this week</div>
+          <div class="agenda-sub">A practical template you can fill in on your own work — today.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: YOU ALREADY DO THIS -->
+  <div class="slide" data-title="You Already Do This">
+    <div class="tag">The Reframe</div>
+    <h2>Your Monday Morning <span class="accent2-word">Is Already an Agent</span></h2>
+    <p class="subtitle">Before we talk about infrastructure, let's talk about what you do without thinking.</p>
+    <div class="grid-2" style="gap:24px; align-items:start;">
+      <div>
+        <div class="code-label">Your internal monologue, 9am Monday</div>
+        <div class="code-block">
+          <span class="comment">// You open Slack. You scan.</span><br>
+          <span class="key">input:</span> <span class="string">"What do I need to do today?"</span><br><br>
+          <span class="comment">// You route based on signal type</span><br>
+          <span class="key">if</span> urgent_flag → handle first<br>
+          <span class="key">if</span> analysis_request → scope it<br>
+          <span class="key">if</span> stakeholder_question → draft answer<br><br>
+          <span class="comment">// You pick the right tool</span><br>
+          <span class="key">skill:</span> <span class="val">"weekly_prioritization"</span><br>
+          <span class="key">output:</span> <span class="string">"focused day plan"</span>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <div class="card purple">
+          <div class="card-label">What you just did</div>
+          <h3>You ran a skill</h3>
+          <p style="font-size:14px; color:var(--muted); margin-top:6px; line-height:1.6;">You took an ambiguous input, applied a learned pattern, routed it to the right response, and produced a structured output. That's a skill.</p>
+        </div>
+        <div class="card green">
+          <div class="card-label">The only difference with an agent</div>
+          <h3>It's written down</h3>
+          <p style="font-size:14px; color:var(--muted); margin-top:6px; line-height:1.6;">A Claude skill is your expertise, made explicit enough that a model can follow it — consistently, at scale, without you.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: 3-LAYER STACK -->
+  <div class="slide" data-title="The 3-Layer Stack">
+    <div class="tag">Core Architecture</div>
+    <h2>The <span class="accent-word">3-Layer Stack</span> That Runs Everything</h2>
+    <p class="subtitle" style="margin-bottom:20px;">Every automated agent — including what we're building — runs on three layers. Click each to explore.</p>
+    <div class="grid-2" style="gap:32px; align-items:start;">
+      <div class="stack">
+        <div class="stack-layer layer-1" onclick="showLayerDetail(1)">
+          <div>
+            <div class="layer-name" style="color:var(--accent)">① Rules</div>
+            <div class="layer-desc">Governance · Boundaries · Always-on</div>
+          </div>
+          <span class="layer-badge badge-purple">System Prompt</span>
+        </div>
+        <div style="text-align:center; font-size:12px; color:var(--muted); font-family:'DM Mono',monospace; padding:4px 0;">↓ constrains</div>
+        <div class="stack-layer layer-2" onclick="showLayerDetail(2)">
+          <div>
+            <div class="layer-name" style="color:var(--accent2)">② Skills</div>
+            <div class="layer-desc">Patterns · Workflows · Reusable</div>
+          </div>
+          <span class="layer-badge badge-pink">Skill Files</span>
+        </div>
+        <div style="text-align:center; font-size:12px; color:var(--muted); font-family:'DM Mono',monospace; padding:4px 0;">↓ calls</div>
+        <div class="stack-layer layer-3" onclick="showLayerDetail(3)">
+          <div>
+            <div class="layer-name" style="color:var(--accent3)">③ Code</div>
+            <div class="layer-desc">Actions · APIs · Real-world execution</div>
+          </div>
+          <span class="layer-badge badge-green">Tools / MCP</span>
+        </div>
+      </div>
+      <div id="layerDetail" style="display:flex; flex-direction:column; gap:12px;">
+        <div class="card" style="border-color: var(--border);">
+          <div class="card-label">Click a layer to inspect it</div>
+          <p style="font-size:14px; color:var(--muted); line-height:1.7;">Each layer has a distinct job. Together they make an agent that knows what it's allowed to do, how to do it well, and how to actually do it.</p>
+        </div>
+        <div class="takeaway">
+          <div class="takeaway-label">Key insight</div>
+          <p style="font-size:14px; line-height:1.7; color:var(--text);">Rules never change per task. Skills are called when relevant. Code only runs when a skill triggers it. This separation is what makes the system safe, predictable, and scalable.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: ROUTING -->
+  <div class="slide" data-title="Routing">
+    <div class="tag">The Intelligence Layer</div>
+    <h2>Routing Flows From <span class="accent3-word">Scope &amp; Intent</span></h2>
+    <p class="subtitle" style="margin-bottom:16px;">Routing doesn't happen by magic. It's the output of two prior steps — and intent classification is itself an agent skill that has to be designed.</p>
+    <div style="display:flex; flex-direction:column; gap:16px;">
+      <div class="flow" style="gap:6px; flex-wrap:wrap;">
+        <div class="flow-step" style="background:rgba(247,106,138,0.08); border-color:rgba(247,106,138,0.3);">
+          <div class="step-num">01</div>
+          <div class="step-label" style="color:var(--accent2)">Question arrives</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="background:rgba(124,106,247,0.08); border-color:rgba(124,106,247,0.3);">
+          <div class="step-num">02 — SKILL</div>
+          <div class="step-label" style="color:var(--accent)">Scope definition</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="background:rgba(124,106,247,0.15); border-color:var(--accent);">
+          <div class="step-num">03 — SKILL</div>
+          <div class="step-label" style="color:var(--accent)">Intent classification</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="background:rgba(106,247,196,0.08); border-color:rgba(106,247,196,0.3);">
+          <div class="step-num">04</div>
+          <div class="step-label" style="color:var(--accent3)">Skill selected</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">
+          <div class="step-num">05</div>
+          <div class="step-label">Analysis runs</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="background:rgba(247,106,138,0.08); border-color:rgba(247,106,138,0.3);">
+          <div class="step-num">06</div>
+          <div class="step-label" style="color:var(--accent2)">Insight delivered</div>
+        </div>
+      </div>
+      <div class="grid-2" style="gap:16px;">
+        <div>
+          <div class="code-label">Scope → Intent → Route (simplified)</div>
+          <div class="code-block" style="font-size:12px;">
+            <span class="comment">// Step 1: Scope the question</span><br>
+            <span class="key">input:</span> <span class="string">"Why did retention drop in Q3?"</span><br>
+            <span class="key">→ scope_skill:</span> <span class="val">hypothesis, metrics, timeframe</span><br><br>
+            <span class="comment">// Step 2: Classify intent (its own skill)</span><br>
+            <span class="key">→ intent:</span> <span class="val">diagnostic</span><br>
+            <span class="key">→ domain:</span> <span class="val">retention</span><br>
+            <span class="key">→ output_type:</span> <span class="val">cohort_analysis</span><br><br>
+            <span class="comment">// Step 3: Route to the right skill</span><br>
+            <span class="key">skill.invoke(<span class="val">"retention_analysis"</span>)</span>
+          </div>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:12px;">
+          <div class="card pink">
+            <div class="card-label">Why intent classification is its own skill</div>
+            <h3>Routing can't route itself</h3>
+            <p style="font-size:13px; color:var(--muted); margin-top:6px; line-height:1.6;">Before the router can act, something has to read the scoped question and decide: diagnostic or exploratory? Retention or acquisition? That judgment is a skill — with triggers, logic, and a structured output the router consumes.</p>
+          </div>
+          <div class="card green">
+            <div class="card-label">You already do this</div>
+            <h3>"Is this a data pull or a strategic question?"</h3>
+            <p style="font-size:13px; color:var(--muted); margin-top:6px; line-height:1.6;">That split-second classification before you respond to a Slack message — that's intent classification. The agent just needs it written down.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 6: SKILL ANATOMY -->
+  <div class="slide" data-title="What's Inside a Skill">
+    <div class="tag">Skill Anatomy</div>
+    <h2>What's Actually <span class="accent-word">Inside a Skill</span></h2>
+    <p class="subtitle" style="margin-bottom:16px;">A skill isn't magic — it's structured expertise. Three parts. Click to open each.</p>
+    <div class="grid-2" style="gap:24px; align-items:start;">
+      <div>
+        <div class="skill-section">
+          <div class="skill-header" onclick="toggleSkill(this)">
+            <span><span style="color:var(--accent)">① Trigger</span> — When should this skill activate?</span>
+            <span style="color:var(--muted)">▼</span>
+          </div>
+          <div class="skill-body">
+            <p>The trigger is a description of the situations this skill applies to. The router reads it to decide whether to invoke the skill.</p>
+            <div class="code-block" style="margin-top:10px; font-size:12px;">
+              <span class="key">trigger:</span> <span class="string">"Use when someone asks about<br>  weekly work prioritization, standup,<br>  or what to focus on today"</span>
+            </div>
+          </div>
+        </div>
+        <div class="skill-section">
+          <div class="skill-header" onclick="toggleSkill(this)">
+            <span><span style="color:var(--accent2)">② Instructions</span> — How should it behave?</span>
+            <span style="color:var(--muted)">▼</span>
+          </div>
+          <div class="skill-body">
+            <p>Step-by-step guidance that shapes how the model responds. This is where your domain knowledge lives. It's basically a very good brief.</p>
+            <div class="code-block" style="margin-top:10px; font-size:12px;">
+              <span class="comment">// From the Agile Companion skill:</span><br>
+              <span class="key">1.</span> Fetch active Jira stories<br>
+              <span class="key">2.</span> Rank by sprint deadline proximity<br>
+              <span class="key">3.</span> Ask: "What's your energy like today?"<br>
+              <span class="key">4.</span> Never overwhelm — max 6–8 stories
+            </div>
+          </div>
+        </div>
+        <div class="skill-section">
+          <div class="skill-header" onclick="toggleSkill(this)">
+            <span><span style="color:var(--accent3)">③ Output</span> — What does it produce?</span>
+            <span style="color:var(--muted)">▼</span>
+          </div>
+          <div class="skill-body">
+            <p>A skill always produces something structured and reusable — not a one-off response. That output might feed into another skill, a tool, or a stakeholder deliverable.</p>
+            <div class="code-block" style="margin-top:10px; font-size:12px;">
+              <span class="key">output:</span> {<br>
+              &nbsp;&nbsp;<span class="val">focus_rank</span>: [list],<br>
+              &nbsp;&nbsp;<span class="val">top_3_today</span>: [stories],<br>
+              &nbsp;&nbsp;<span class="val">standup_draft</span>: string<br>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        <div class="big-quote">"A skill is your judgment, written down precisely enough to be repeatable."</div>
+        <div class="card purple">
+          <div class="card-label">Real example you can see</div>
+          <h3>The Agile Companion Skill</h3>
+          <p style="font-size:13px; color:var(--muted); margin-top:6px; line-height:1.6;">This skill turns your daily standup into a structured Jira update — automatically. It knows when to coach vs. document. It asks one question at a time. That's all written in the skill file.</p>
+        </div>
+        <div class="takeaway">
+          <div class="takeaway-label">If you can write a good brief, you can write a skill</div>
+          <p style="font-size:13px; line-height:1.7; color:var(--text);">The hardest part isn't the format. It's being specific enough about your own expertise that a model can follow it.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 7: CGF -->
+  <div class="slide" data-title="Consumer Growth Framework">
+    <div class="tag">Connecting the Dots</div>
+    <h2>The <span class="accent2-word">Consumer Growth Framework</span></h2>
+    <p class="subtitle" style="margin-bottom:16px;">Everything we've covered is what the CGF is built on. Skills are the unit of work. Routing is the intelligence layer. The stack governs it all.</p>
+    <div style="display:flex; flex-direction:column; gap:12px; margin-bottom:20px;">
+      <div class="flow" style="gap:6px; flex-wrap:wrap; justify-content:center;">
+        <div class="flow-step" style="background:rgba(247,106,138,0.1); border-color:rgba(247,106,138,0.3);">
+          <div class="step-num">Business Question</div>
+          <div class="step-label" style="font-size:12px; color:var(--accent2)">Ambiguous input</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="background:rgba(124,106,247,0.1); border-color:rgba(124,106,247,0.4);">
+          <div class="step-num">Scope Skill</div>
+          <div class="step-label" style="font-size:12px; color:var(--accent)">Frame the question</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="background:rgba(124,106,247,0.1); border-color:rgba(124,106,247,0.4);">
+          <div class="step-num">Router</div>
+          <div class="step-label" style="font-size:12px; color:var(--accent)">Classify → route</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="background:rgba(124,106,247,0.1); border-color:rgba(124,106,247,0.4);">
+          <div class="step-num">Analysis Skill</div>
+          <div class="step-label" style="font-size:12px; color:var(--accent)">Run the work</div>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="background:rgba(106,247,196,0.08); border-color:rgba(106,247,196,0.3);">
+          <div class="step-num">Insight Deliverable</div>
+          <div class="step-label" style="font-size:12px; color:var(--accent3)">Structured output</div>
+        </div>
+      </div>
+    </div>
+    <div class="grid-3" style="gap:14px;">
+      <div class="card purple">
+        <div class="card-label">Skill 1</div>
+        <h3>Question Scoping</h3>
+        <p style="font-size:13px; color:var(--muted); margin-top:6px; line-height:1.6;">Takes a vague business question and returns a structured analysis brief: hypothesis, metrics, data sources, output type.</p>
+      </div>
+      <div class="card pink">
+        <div class="card-label">Routing Layer</div>
+        <h3>Analysis Router</h3>
+        <p style="font-size:13px; color:var(--muted); margin-top:6px; line-height:1.6;">Reads the scoped brief. Classifies: retention? acquisition? segment deep-dive? Calls the right analysis skill.</p>
+      </div>
+      <div class="card green">
+        <div class="card-label">Skill N</div>
+        <h3>Insight Delivery</h3>
+        <p style="font-size:13px; color:var(--muted); margin-top:6px; line-height:1.6;">Formats findings as a stakeholder-ready output. Knows the difference between an exec brief and a data team handoff.</p>
+      </div>
+    </div>
+    <div class="takeaway" style="margin-top:16px;">
+      <div class="takeaway-label">The connection</div>
+      <p style="font-size:14px; line-height:1.7;">Each box in this flow <em>is a skill</em>. The arrows <em>are routing</em>. The rules keep it consistent. When you build a skill for your Monday morning, you're practicing the exact same pattern — just at a smaller scope.</p>
+    </div>
+  </div>
+
+  <!-- SLIDE 8: BUILD YOUR OWN -->
+  <div class="slide" data-title="Build Your First Skill">
+    <div class="tag">This Week → Your First Skill</div>
+    <h2>You Could Build <span class="accent3-word">This Tonight</span></h2>
+    <p class="subtitle" style="margin-bottom:16px;">Pick any recurring task in your work week. Fill in three fields. That's a skill.</p>
+    <div class="grid-2" style="gap:24px;">
+      <div>
+        <div class="code-label">Skill Template — copy &amp; fill in</div>
+        <div class="code-block">
+          <span class="comment">---</span><br>
+          <span class="key">name:</span> <span class="string">[your skill name]</span><br>
+          <span class="key">description:</span> <span class="string">"Use this skill when...</span><br>
+          &nbsp;&nbsp;<span class="string">[describe the situation]"</span><br>
+          <span class="comment">---</span><br><br>
+          <span class="comment"># What this skill does</span><br>
+          [One sentence summary]<br><br>
+          <span class="comment">## When to trigger</span><br>
+          [Signal words / situations]<br><br>
+          <span class="comment">## How to behave</span><br>
+          <span class="key">1.</span> [First step — what to check or ask]<br>
+          <span class="key">2.</span> [Second step]<br>
+          <span class="key">3.</span> [What to never do]<br><br>
+          <span class="comment">## Output format</span><br>
+          [What it produces]
+        </div>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <div class="card" style="border-color:var(--border);">
+          <div class="card-label">Good first skill candidates from your week</div>
+          <div style="display:flex; flex-direction:column; gap:10px; margin-top:8px;">
+            <div style="display:flex; gap:10px; align-items:flex-start; font-size:14px;">
+              <span style="color:var(--accent3); font-family:'DM Mono',monospace; font-size:11px; padding-top:2px; min-width:20px;">→</span>
+              <div><strong>Weekly prioritization</strong><br><span style="color:var(--muted); font-size:13px;">Monday morning: what am I actually working on?</span></div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:flex-start; font-size:14px;">
+              <span style="color:var(--accent3); font-family:'DM Mono',monospace; font-size:11px; padding-top:2px; min-width:20px;">→</span>
+              <div><strong>Stakeholder brief writer</strong><br><span style="color:var(--muted); font-size:13px;">Turn analysis notes into a 3-bullet exec update</span></div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:flex-start; font-size:14px;">
+              <span style="color:var(--accent3); font-family:'DM Mono',monospace; font-size:11px; padding-top:2px; min-width:20px;">→</span>
+              <div><strong>Analysis scoper</strong><br><span style="color:var(--muted); font-size:13px;">Vague Slack question → structured data brief</span></div>
+            </div>
+            <div style="display:flex; gap:10px; align-items:flex-start; font-size:14px;">
+              <span style="color:var(--accent3); font-family:'DM Mono',monospace; font-size:11px; padding-top:2px; min-width:20px;">→</span>
+              <div><strong>Meeting prep checklist</strong><br><span style="color:var(--muted); font-size:13px;">What do I need before a data review?</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="takeaway">
+          <div class="takeaway-label">The real point</div>
+          <p style="font-size:13px; line-height:1.7;">Building a skill teaches you to think like an agent architect. That's the exact muscle the CGF needs everyone on this team to develop.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 9: TAKEAWAYS -->
+  <div class="slide" data-title="Key Takeaways">
+    <div class="tag">Anchor Points</div>
+    <h2>What To <span class="accent-word">Hold Onto</span></h2>
+    <p class="subtitle" style="margin-bottom:16px;">This is your reference. Come back to it when you're building, confused, or explaining this to someone else.</p>
+    <div class="handoff-grid">
+      <div class="handoff-item">
+        <div class="handoff-icon">①</div>
+        <div>
+          <h3 style="font-size:15px; margin-bottom:4px;">Rules → Skills → Code</h3>
+          <p style="font-size:13px; color:var(--muted); line-height:1.6;">The 3-layer stack is the architecture of every automated workflow. Rules govern. Skills do the thinking. Code takes action.</p>
+        </div>
+      </div>
+      <div class="handoff-item">
+        <div class="handoff-icon">②</div>
+        <div>
+          <h3 style="font-size:15px; margin-bottom:4px;">Skills are reusable expertise</h3>
+          <p style="font-size:13px; color:var(--muted); line-height:1.6;">A skill is a named, triggerable pattern. Trigger, instructions, output. If you can write a good brief, you can write a skill.</p>
+        </div>
+      </div>
+      <div class="handoff-item">
+        <div class="handoff-icon">③</div>
+        <div>
+          <h3 style="font-size:15px; margin-bottom:4px;">Routing flows from intent</h3>
+          <p style="font-size:13px; color:var(--muted); line-height:1.6;">Scope definition → intent classification → skill selection. Intent classification is itself an agent skill — it has to be designed, not assumed.</p>
+        </div>
+      </div>
+      <div class="handoff-item">
+        <div class="handoff-icon">④</div>
+        <div>
+          <h3 style="font-size:15px; margin-bottom:4px;">CGF = these patterns, chained</h3>
+          <p style="font-size:13px; color:var(--muted); line-height:1.6;">Question → Scope → Intent Classification → Router → Analysis → Insight. Every box is a skill. Every arrow is designed.</p>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:16px;">
+      <div class="card green" style="padding:20px 24px;">
+        <div class="card-label">Your leave-behind — start here today</div>
+        <h3 style="margin-bottom:8px;">🛠 Skill Creator</h3>
+        <p style="font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:14px;">The official Anthropic skill for building skills. Open it in Claude, describe what you want to automate, and it scaffolds the skill file for you. This is your on-ramp.</p>
+        <a href="https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md" target="_blank" style="font-family:'DM Mono',monospace; font-size:11px; color:var(--accent3); text-decoration:none; border:1px solid rgba(106,247,196,0.3); padding:6px 14px; border-radius:4px; display:inline-block; letter-spacing:1px; text-transform:uppercase; transition:all 0.2s;" onmouseover="this.style.background='rgba(106,247,196,0.1)'" onmouseout="this.style.background='transparent'">→ Open on GitHub</a>
+      </div>
+      <div class="card" style="border-color:rgba(124,106,247,0.35); background:rgba(124,106,247,0.06); padding:20px 24px; position:relative;">
+        <div style="position:absolute; top:14px; right:14px; font-family:'DM Mono',monospace; font-size:10px; color:var(--accent); background:rgba(124,106,247,0.15); padding:3px 10px; border-radius:20px; letter-spacing:1px; text-transform:uppercase;">Built for this team</div>
+        <div class="card-label">FYI — I built this last night</div>
+        <h3 style="margin-bottom:8px;">🤝 Agile Companion</h3>
+        <p style="font-size:13px; color:var(--muted); line-height:1.6;">Turns your daily standup into structured Jira updates — without copy-paste friction. Ranks your stories. Coaches vs. documents based on context. Asks one good question at a time.</p>
+        <p style="font-size:12px; color:var(--accent); font-family:'DM Mono',monospace; margin-top:10px; letter-spacing:0.5px;">This is what a team-built skill looks like in the wild.</p>
+      </div>
+    </div>
+
+    <div class="takeaway" style="margin-top:14px;">
+      <div class="takeaway-label">The one sentence version</div>
+      <div class="big-quote" style="margin:10px 0 0; font-size:clamp(14px,1.7vw,20px);">
+        "Skills are the unit of work. Intent classification is the judgment. Together they take a business question all the way to a data insight — without you in the loop."
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const titles = Array.from(slides).map(s => s.dataset.title || '');
+  let current = 0;
+
+  const dotsEl = document.getElementById('dots');
+  const progressEl = document.getElementById('progress');
+  const currentEl = document.getElementById('current');
+  const totalEl = document.getElementById('total');
+  const titleEl = document.getElementById('slideTitle');
+
+  totalEl.textContent = slides.length;
+
+  // Build dots
+  titles.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'slide-dot' + (i === 0 ? ' active' : '');
+    d.title = titles[i];
+    d.onclick = () => goTo(i);
+    dotsEl.appendChild(d);
+  });
+
+  function goTo(n) {
+    slides[current].classList.remove('active');
+    dotsEl.children[current].classList.remove('active');
+    current = Math.max(0, Math.min(n, slides.length - 1));
+    slides[current].classList.add('active');
+    dotsEl.children[current].classList.add('active');
+    currentEl.textContent = current + 1;
+    titleEl.textContent = titles[current];
+    progressEl.style.width = ((current + 1) / slides.length * 100) + '%';
+  }
+
+  function nextSlide() { goTo(current + 1); }
+  function prevSlide() { goTo(current - 1); }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextSlide();
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prevSlide();
+  });
+
+  // Init progress
+  progressEl.style.width = (1 / slides.length * 100) + '%';
+
+  // Layer detail
+  const layerDetails = {
+    1: {
+      title: 'Rules — The Constitution',
+      body: 'Rules are the system prompt. They never change mid-session. They define what the agent is allowed to do, how it should behave across all tasks, what it must never do, and what its identity is. Think of it as the HR policy + job description for the agent. You write it once and it governs everything below it.',
+      color: 'var(--accent)'
+    },
+    2: {
+      title: 'Skills — The Expertise Library',
+      body: 'Skills are reusable, named workflows. They have a trigger condition, step-by-step instructions, and a defined output. The router decides which skill to call based on what the input looks like. A well-built skill embeds real domain knowledge — it is your best analyst\'s process, written down.',
+      color: 'var(--accent2)'
+    },
+    3: {
+      title: 'Code — The Hands',
+      body: 'Code is where things actually happen in the world: API calls, database queries, file creation, Jira updates, Slack messages. Code is only called when a skill explicitly triggers it. The model never "reaches for code" on its own — the skill has to instruct it to. This is what makes the system safe.',
+      color: 'var(--accent3)'
+    }
+  };
+
+  function showLayerDetail(n) {
+    const d = layerDetails[n];
+    const el = document.getElementById('layerDetail');
+    el.innerHTML = `
+      <div class="card" style="border-top: 2px solid ${d.color};">
+        <div class="card-label">Layer ${n} detail</div>
+        <h3 style="color:${d.color}; margin-bottom:10px;">${d.title}</h3>
+        <p style="font-size:14px; color:var(--muted); line-height:1.7;">${d.body}</p>
+      </div>
+      <div class="takeaway">
+        <div class="takeaway-label">Analogy</div>
+        <p style="font-size:13px; line-height:1.7; color:var(--text);">${
+          n === 1 ? 'Rules are like your team\'s operating principles — they\'re true in every meeting, every project, every output.' :
+          n === 2 ? 'Skills are like Standard Operating Procedures. When a situation arises, you pull the right SOP. The SOP tells you exactly what to do.' :
+          'Code is like a phone call to an external system. The skill tells you to "call data engineering." The code actually dials.'
+        }</p>
+      </div>`;
+  }
+
+  // Skill accordion
+  function toggleSkill(header) {
+    const body = header.nextElementSibling;
+    body.classList.toggle('open');
+    header.querySelector('span:last-child').textContent = body.classList.contains('open') ? '▲' : '▼';
+  }
+</script>
+
+</body>
+</html>

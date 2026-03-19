@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Skills Brief — Claude Code</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0d0d0b;
+  --surface: #141412;
+  --surface2: #1c1c19;
+  --border: #2a2a25;
+  --border2: #353530;
+  --text: #e8e4db;
+  --text-dim: #8a8678;
+  --text-muted: #4a4840;
+  --accent: #e8a838;
+  --accent2: #5b8c6e;
+  --accent3: #c45c3a;
+  --serif: 'Fraunces', Georgia, serif;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+}
+
+html { scroll-behavior: smooth; font-size: 16px; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+#progress-bar {
+  position: fixed; top: 0; left: 0; height: 2px;
+  background: var(--accent); width: 0%;
+  z-index: 1000; transition: width 0.15s linear;
+}
+
+nav {
+  position: fixed; top: 0; left: 0; right: 0; height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2.5rem;
+  background: rgba(13,13,11,0.94);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  z-index: 900;
+}
+.nav-brand {
+  font-family: var(--mono); font-size: 0.68rem;
+  letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-muted);
+}
+.nav-brand span { color: var(--accent); }
+.nav-links { display: flex; gap: 0.25rem; }
+.nav-link {
+  font-family: var(--mono); font-size: 0.65rem;
+  color: var(--text-muted); text-decoration: none;
+  padding: 0.3rem 0.6rem; letter-spacing: 0.1em;
+  border: 1px solid transparent; transition: all 0.2s; text-transform: uppercase;
+}
+.nav-link:hover, .nav-link.active { color: var(--accent); border-color: var(--border2); }
+
+section {
+  min-height: 100vh;
+  padding: 8rem 2.5rem 6rem;
+  border-bottom: 1px solid var(--border);
+  opacity: 0; transform: translateY(20px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+section.visible { opacity: 1; transform: translateY(0); }
+.container { max-width: 860px; margin: 0 auto; width: 100%; }
+
+.eyebrow {
+  font-family: var(--mono); font-size: 0.65rem;
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--text-muted); display: flex; align-items: center; gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+.eyebrow::after { content: ''; flex: 1; max-width: 48px; height: 1px; background: var(--border2); }
+
+h1, h2 { font-family: var(--serif); font-weight: 300; line-height: 1.05; }
+h1 { font-size: clamp(3.2rem, 7vw, 6.5rem); }
+h2 { font-size: clamp(2rem, 4vw, 3.2rem); margin-bottom: 1.5rem; }
+h3 { font-family: var(--sans); font-size: 0.94rem; font-weight: 500; margin-bottom: 0.5rem; color: var(--text); }
+p { font-size: 0.94rem; color: #b8b4ab; line-height: 1.78; }
+em { font-style: italic; color: var(--text); }
+strong { font-weight: 500; color: var(--text); }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+code {
+  font-family: var(--mono); font-size: 0.8rem;
+  background: var(--surface2); color: var(--accent);
+  padding: 0.15em 0.45em; border: 1px solid var(--border);
+}
+
+/* ─── HERO ─── */
+#s1 { display: flex; align-items: center; background: var(--bg); padding-top: 52px; }
+#s1 h1 em { color: var(--accent); font-style: italic; display: block; }
+.hero-rule { width: 48px; height: 2px; background: var(--accent); margin: 2rem 0; }
+.hero-sub {
+  font-size: 1rem; color: var(--text-dim); max-width: 540px; line-height: 1.8;
+  border-left: 1px solid var(--border2); padding-left: 1.5rem;
+}
+.hero-stats { display: flex; gap: 3rem; padding-top: 3rem; border-top: 1px solid var(--border); flex-wrap: wrap; margin-top: 3rem; }
+.stat { display: flex; flex-direction: column; gap: 0.3rem; }
+.stat-num { font-family: var(--serif); font-size: 2.6rem; font-weight: 300; color: var(--text); line-height: 1; }
+.stat-label { font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); }
+
+/* ─── REFRAME ─── */
+#s2 { background: var(--surface); }
+
+/* THE FIX: folder tree uses <pre> with nested spans for color only, no layout interference */
+.folder-tree {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 1.5rem 2rem;
+  margin: 2rem 0;
+  overflow-x: auto;
+}
+.folder-tree pre {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  line-height: 1.95;
+  color: var(--text-dim);
+  white-space: pre;
+  margin: 0;
+}
+.folder-tree pre .dir   { color: var(--accent); }
+.folder-tree pre .note  { color: var(--text-muted); }
+.folder-tree pre .hl    { color: var(--accent2); }
+
+.callout {
+  background: var(--surface2); border: 1px solid var(--border2);
+  border-left: 3px solid var(--accent); padding: 1.5rem 2rem; margin: 2rem 0;
+}
+.callout p { font-family: var(--serif); font-weight: 300; font-size: 1.1rem; font-style: italic; color: var(--text); line-height: 1.65; }
+
+.reframe-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1px;
+  background: var(--border); border: 1px solid var(--border); margin-top: 2rem;
+}
+.reframe-cell { background: var(--surface); padding: 1.75rem; }
+.reframe-cell.dark { background: var(--bg); }
+.reframe-cell .cell-label {
+  font-family: var(--mono); font-size: 0.62rem; text-transform: uppercase;
+  letter-spacing: 0.16em; color: var(--text-muted); margin-bottom: 0.75rem;
+}
+.reframe-cell p { font-size: 0.88rem; line-height: 1.72; }
+
+/* ─── CRAFT ─── */
+#s3 { background: var(--bg); }
+.tips-list { display: flex; flex-direction: column; margin-top: 2.5rem; }
+.tip {
+  display: grid; grid-template-columns: 52px 1fr;
+  border-bottom: 1px solid var(--border); padding: 2.25rem 0;
+  transition: all 0.18s; cursor: default;
+}
+.tip:first-child { border-top: 1px solid var(--border); }
+.tip:hover { background: var(--surface); padding: 2.25rem 1.5rem; margin: 0 -1.5rem; }
+.tip-num { font-family: var(--serif); font-size: 2rem; font-weight: 300; color: var(--text-muted); line-height: 1.2; padding-top: 0.1rem; }
+.tip-body h3 { font-size: 0.96rem; }
+.tip-body > p { font-size: 0.88rem; margin-top: 0.4rem; }
+.tip-example {
+  margin-top: 0.9rem; background: var(--surface2);
+  border: 1px solid var(--border); border-left: 2px solid var(--accent2);
+  padding: 0; overflow: hidden;
+}
+.tip-example .ex-label {
+  font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--text-muted);
+  display: block; padding: 0.4rem 0.9rem;
+  border-bottom: 1px solid var(--border); background: var(--bg);
+}
+.tip-example pre {
+  font-family: var(--mono); font-size: 0.73rem; color: var(--text-dim);
+  line-height: 1.75; padding: 0.75rem 0.9rem; white-space: pre-wrap;
+  margin: 0;
+}
+.tip-example pre .good { color: var(--accent2); }
+.tip-example pre .bad  { color: var(--accent3); }
+.tip-example pre .key  { color: var(--accent); }
+
+.inline-link {
+  font-family: var(--mono); font-size: 0.72rem;
+  color: var(--accent); border-bottom: 1px solid rgba(232,168,56,0.3);
+  text-decoration: none; transition: border-color 0.2s;
+}
+.inline-link:hover { border-color: var(--accent); text-decoration: none; }
+
+/* ─── ADVANCED ─── */
+#s4 { background: var(--surface); }
+.adv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2.5rem; }
+.adv-card {
+  background: var(--bg); border: 1px solid var(--border); padding: 1.75rem;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.adv-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+.adv-tag {
+  font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--accent); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;
+}
+.adv-tag::before { content: ''; width: 18px; height: 1px; background: var(--accent); flex-shrink: 0; }
+.adv-card h3 { font-size: 1rem; margin-bottom: 0.6rem; }
+.adv-card > p { font-size: 0.86rem; margin-bottom: 0; }
+.adv-grounding {
+  margin-top: 0.75rem; padding: 0.6rem 0.9rem;
+  background: var(--surface2); border: 1px solid var(--border);
+  font-size: 0.8rem; color: var(--text-dim); line-height: 1.6;
+}
+.adv-grounding .term { color: var(--accent); font-family: var(--mono); font-size: 0.75rem; }
+.adv-code {
+  margin-top: 0.75rem;
+  background: var(--surface2); border: 1px solid var(--border); border-left: 2px solid var(--accent3);
+  padding: 0.8rem 1rem; overflow: hidden;
+}
+.adv-code pre {
+  font-family: var(--mono); font-size: 0.72rem; color: var(--text-dim);
+  line-height: 1.75; white-space: pre; margin: 0;
+}
+
+/* ─── ORG SCALE ─── */
+#s5 { background: var(--bg); }
+.scale-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 2.5rem; }
+.scale-card { border: 1px solid var(--border); padding: 1.75rem; position: relative; overflow: hidden; }
+.scale-card::after { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 2px; background: var(--accent2); }
+.scale-card.b::after { background: var(--accent); }
+.scale-card h3 { font-size: 0.95rem; margin-bottom: 0.75rem; }
+.scale-card p { font-size: 0.86rem; }
+.scale-card .path {
+  display: inline-block; margin-top: 0.75rem; font-family: var(--mono); font-size: 0.72rem;
+  background: var(--surface2); padding: 0.3rem 0.7rem; color: var(--accent2); border: 1px solid var(--border);
+}
+.scale-card.b .path { color: var(--accent); }
+
+.flow-steps { display: flex; align-items: stretch; border: 1px solid var(--border); overflow: hidden; margin: 2.5rem 0; }
+.flow-step { flex: 1; padding: 1.25rem 0.75rem; text-align: center; border-right: 1px solid var(--border); position: relative; }
+.flow-step:last-child { border-right: none; }
+.step-label { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); display: block; margin-bottom: 0.4rem; }
+.step-name { font-size: 0.84rem; font-weight: 500; color: var(--text); display: block; }
+.flow-arrow { font-size: 0.7rem; color: var(--accent); position: absolute; right: -7px; top: 50%; transform: translateY(-50%); z-index: 1; background: var(--bg); padding: 2px 0; }
+
+.warning {
+  background: var(--surface2); border: 1px solid #3a2a1a;
+  border-left: 3px solid var(--accent3); padding: 1.25rem 1.5rem;
+  display: flex; gap: 1rem; align-items: flex-start; margin-top: 1.5rem;
+}
+.warning-mark { font-family: var(--mono); font-size: 0.75rem; color: var(--accent3); flex-shrink: 0; padding-top: 0.15rem; }
+.warning p { font-size: 0.86rem; }
+
+/* ─── TAXONOMY ─── */
+#s6 { background: var(--surface); }
+.appendix-label {
+  display: inline-flex; align-items: center; gap: 0.75rem;
+  font-family: var(--mono); font-size: 0.62rem; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: 2rem; border: 1px solid var(--border); padding: 0.4rem 0.9rem;
+}
+.taxonomy-table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; font-size: 0.84rem; }
+.taxonomy-table th {
+  font-family: var(--mono); font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--text-muted); padding: 0.6rem 1rem; text-align: left;
+  border-bottom: 1px solid var(--border2); background: var(--bg);
+}
+.taxonomy-table td { padding: 0.9rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.taxonomy-table tr:hover td { background: var(--bg); }
+.taxonomy-table td:first-child { font-family: var(--mono); font-size: 0.65rem; color: var(--text-muted); width: 32px; }
+.taxonomy-table td:nth-child(2) { font-weight: 500; color: var(--text); white-space: nowrap; }
+.taxonomy-table td:nth-child(3) { color: var(--text-dim); font-size: 0.82rem; }
+
+.gap-prompt { margin-top: 2.5rem; background: var(--bg); border: 1px solid var(--border2); padding: 1.5rem 2rem; text-align: center; }
+.gap-prompt p { font-family: var(--serif); font-style: italic; font-size: 1.05rem; color: var(--text); }
+
+/* ─── CTA ─── */
+#s7 { background: var(--bg); display: flex; align-items: center; min-height: 75vh; }
+.cta-inner { max-width: 720px; }
+.cta-inner h2 { font-size: clamp(2.2rem, 5vw, 3.8rem); line-height: 1.1; margin-bottom: 1.75rem; }
+.cta-inner h2 em { color: var(--accent); }
+.cta-inner > p { font-size: 0.96rem; margin-bottom: 1.25rem; max-width: 540px; }
+
+.cta-box {
+  margin-top: 2.5rem; background: var(--surface);
+  border: 1px solid var(--border2); padding: 2rem 2.25rem;
+  display: grid; grid-template-columns: 1fr auto; gap: 2rem; align-items: center;
+}
+.cta-box-text h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+.cta-box-text p { font-size: 0.86rem; max-width: 440px; }
+.cta-box-text .investment {
+  margin-top: 0.75rem; display: flex; gap: 1.5rem; flex-wrap: wrap;
+}
+.inv-item {
+  display: flex; flex-direction: column; gap: 0.15rem;
+}
+.inv-num { font-family: var(--serif); font-size: 1.6rem; color: var(--text); line-height: 1; }
+.inv-label { font-family: var(--mono); font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+.cta-btn {
+  display: inline-flex; flex-direction: column; align-items: center; gap: 0.4rem;
+  font-family: var(--mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--bg); background: var(--accent); border: 1px solid var(--accent);
+  padding: 0.9rem 1.5rem; text-decoration: none; transition: background 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+.cta-btn:hover { background: transparent; color: var(--accent); text-decoration: none; }
+.cta-btn .cmd { font-size: 0.65rem; opacity: 0.7; margin-top: 0.1rem; }
+
+.closing-links { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--border); }
+.closing-link {
+  font-family: var(--mono); font-size: 0.68rem; letter-spacing: 0.1em;
+  color: var(--text-muted); text-decoration: none; text-transform: uppercase;
+  transition: color 0.2s; display: flex; align-items: center; gap: 0.35rem;
+}
+.closing-link::before { content: '↗'; font-size: 0.6rem; }
+.closing-link:hover { color: var(--text); }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 720px) {
+  nav { padding: 0 1.25rem; }
+  .nav-links { display: none; }
+  section { padding: 6rem 1.25rem 4rem; }
+  .reframe-grid, .adv-grid, .scale-cols { grid-template-columns: 1fr; }
+  .flow-steps { flex-direction: column; }
+  .flow-step { border-right: none; border-bottom: 1px solid var(--border); }
+  .flow-arrow { display: none; }
+  .tip:hover { margin: 0; padding: 2.25rem 0; }
+  .cta-box { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<nav>
+  <span class="nav-brand">The Skills Brief · <span>Claude Code</span></span>
+  <div class="nav-links">
+    <a href="#s1" class="nav-link">Overview</a>
+    <a href="#s2" class="nav-link">Reframe</a>
+    <a href="#s3" class="nav-link">Craft</a>
+    <a href="#s4" class="nav-link">Advanced</a>
+    <a href="#s5" class="nav-link">Org Scale</a>
+    <a href="#s6" class="nav-link">Taxonomy</a>
+  </div>
+</nav>
+
+<!-- ── HERO ── -->
+<section id="s1">
+  <div class="container">
+    <div class="eyebrow">Weekly Learning · Claude Code</div>
+    <h1>The<br><em>Skills Brief</em></h1>
+    <div class="hero-rule"></div>
+    <p class="hero-sub">Skills have become the most-used extension point in Claude Code. Hundreds are active at Anthropic right now. This bulletin distills what we've learned using them at scale — what works, what doesn't, and what separates a skill worth sharing from one that quietly gets ignored.</p>
+    <div class="hero-stats">
+      <div class="stat">
+        <span class="stat-num">100s</span>
+        <span class="stat-label">Active in production</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">9</span>
+        <span class="stat-label">Recurring categories</span>
+      </div>
+      <div class="stat">
+        <span class="stat-num">6</span>
+        <span class="stat-label">Craft principles</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── REFRAME ── -->
+<section id="s2">
+  <div class="container">
+    <div class="eyebrow">01 · Foundation</div>
+    <h2>A skill is a folder.<br>The folder is the skill.</h2>
+    <p>The most common misconception: skills are "just markdown files." The most powerful ones are nothing like that. A skill is a <em>folder</em> — a composable workspace the agent can navigate, discover, and act on. That distinction changes how you design them.</p>
+
+    <div class="callout">
+      <p>The file system itself is a design surface. What you put in it — and how you point Claude toward it — determines what the skill can do. This is progressive disclosure: structure that reveals context on demand, not all at once.</p>
+    </div>
+
+    <!-- FOLDER TREE: single <pre> block, spans for color only -->
+    <div class="folder-tree">
+<pre><span class="dir">my-analysis-skill/</span>
+├── <span class="dir">SKILL.md</span>                 <span class="note"># instructions + trigger description</span>
+├── <span class="dir">references/</span>
+│   └── api.md               <span class="note"># detailed signatures — Claude reads when needed</span>
+├── <span class="dir">assets/</span>
+│   └── report-template.md   <span class="note"># output template to copy and populate</span>
+├── <span class="dir">scripts/</span>
+│   ├── <span class="hl">fetch_events.py</span>      <span class="note"># warehouse helpers with credentials baked in</span>
+│   └── <span class="hl">cohort_utils.py</span>      <span class="note"># reusable cohort logic for Claude to compose from</span>
+└── config.json              <span class="note"># setup state: env, warehouse, output channel</span></pre>
+    </div>
+
+    <p style="font-size:0.86rem; color:var(--text-muted); margin-top:-1rem; margin-bottom:2rem;">Notice that <code>SKILL.md</code> doesn't carry everything — it <em>points</em> to things. Claude reads <code>references/api.md</code> when it needs signatures. It picks up <code>report-template.md</code> when producing output. The scripts are there to compose from, not reconstruct. This is the folder doing the work.</p>
+
+    <div class="reframe-grid">
+      <div class="reframe-cell dark">
+        <div class="cell-label">For data scientists</div>
+        <p>Think of a skill like a project repo, not a README. It can carry your helper libraries, canonical query patterns, warehouse credentials, and analysis templates — all things Claude can discover and use without being told every time.</p>
+      </div>
+      <div class="reframe-cell">
+        <div class="cell-label">Progressive disclosure</div>
+        <p>You don't front-load everything into the main file. You structure what exists and tell Claude where to find it. Context is loaded on demand — which keeps your instructions lean and your skill adaptable.</p>
+      </div>
+      <div class="reframe-cell">
+        <div class="cell-label">Configuration options</div>
+        <p>Skills in Claude Code can register dynamic hooks, persist state across sessions, and compose with other installed skills. The teams getting the most out of skills use these options creatively — not just the instructions file.</p>
+      </div>
+      <div class="reframe-cell dark">
+        <div class="cell-label">The implication</div>
+        <p>Before you write a line of <code>SKILL.md</code>, think about the folder. What scripts, templates, or reference files could live here? What would Claude reach for if it knew they existed?</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── CRAFT ── -->
+<section id="s3">
+  <div class="container">
+    <div class="eyebrow">02 · Craft</div>
+    <h2>Six principles for<br>writing great skills</h2>
+    <p>Most skills start weak and compound in value over time. Every principle below addresses a specific way skills fail — and what right looks like instead.</p>
+
+    <div class="tips-list">
+
+      <div class="tip">
+        <div class="tip-num">1</div>
+        <div class="tip-body">
+          <h3>Don't state the obvious</h3>
+          <p>Claude already knows pandas, SQL, and how to write a data pipeline. Skill content that restates general knowledge wastes context and dilutes the signal. Focus exclusively on what Claude <em>cannot</em> know without you — your internal conventions, your canonical tables, the steps your team always gets wrong.</p>
+          <div class="tip-example">
+            <span class="ex-label">DS example — the difference</span>
+<pre><span class="bad">✗</span>  "Use pandas for dataframe operations and SQL for queries."
+<span class="good">✓</span>  "Never join on user_id before the dedup step in users_clean.
+    Skipping it causes row explosion. This bites everyone at least once."</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip">
+        <div class="tip-num">2</div>
+        <div class="tip-body">
+          <h3>Build a Gotchas section — and keep building it</h3>
+          <p>The highest-signal content in any skill is a <code>## Gotchas</code> section at the bottom of <code>SKILL.md</code>. This isn't written once — it's a living log. The loop: run the skill, Claude hits a failure or produces a wrong result, you add that failure as a gotcha entry, repeat. Each entry should name the failure, explain why it happens, and state what to do instead. Over time this section becomes the most valuable part of the skill.</p>
+          <div class="tip-example">
+            <span class="ex-label">What it looks like in SKILL.md</span>
+<pre><span class="key">## Gotchas</span>
+
+- cohort_events uses UTC; users_clean uses local TZ.
+  Always convert before joining or your cohorts will be off by hours.
+
+- The `activated` flag is written asynchronously.
+  Wait at least 15 minutes after signup before querying it.
+
+- session_id is not unique across devices.
+  Use the composite key (user_id, session_id) or results are wrong.</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip">
+        <div class="tip-num">3</div>
+        <div class="tip-body">
+          <h3>Use progressive disclosure across the file system</h3>
+          <p>Don't collapse everything into <code>SKILL.md</code>. Split detailed function signatures into <code>references/api.md</code>. Put output templates in <code>assets/</code>. Put helper scripts in <code>scripts/</code>. Then tell Claude what files exist and when to reach for them — it will load that context on demand rather than all at once. This keeps your main instructions file readable and your skill composable.</p>
+          <div class="tip-example">
+            <span class="ex-label">Pattern in SKILL.md</span>
+<pre>For full function signatures and usage examples,
+see <span class="key">references/api.md</span>.
+
+When producing a report, copy and populate
+the template at <span class="key">assets/report-template.md</span>.</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip">
+        <div class="tip-num">4</div>
+        <div class="tip-body">
+          <h3>Write the description for the model, not for humans</h3>
+          <p>When Claude Code starts a session it scans every installed skill's description to decide whether a skill applies to the current request. That makes the description a <em>trigger condition</em>, not a summary. A weak description causes undertriggering — Claude never reaches for the skill even when it would help. Write it as an explicit list of the situations that should invoke it.</p>
+          <div class="tip-example">
+            <span class="ex-label">Weak vs. strong trigger description</span>
+<pre><span class="bad">✗</span>  "Helper for data analysis tasks."
+
+<span class="good">✓</span>  "Use when the user wants to query funnel events, analyze cohort
+    retention, compare segment conversion rates, investigate
+    signup-to-activation drop-off, or explore event-level user data."</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip">
+        <div class="tip-num">5</div>
+        <div class="tip-body">
+          <h3>Don't railroad Claude</h3>
+          <p>Claude follows the letter of your instructions — not the spirit. Overly prescriptive skills fail silently: Claude executes exactly what you wrote, even when the situation calls for something slightly different. The failure mode isn't an error — it's a subtly wrong result that looks plausible. Because skills are reused across many different requests, instructions that are too rigid will break on edge cases you didn't anticipate when you wrote them.</p>
+          <div class="tip-example">
+            <span class="ex-label">The failure mode, made concrete</span>
+<pre><span class="bad">✗</span>  "Always query the last 30 days."
+    → User asks about last quarter. Claude queries 30 days anyway.
+
+<span class="good">✓</span>  "Default to the last 30 days unless the user specifies a range."
+    → Claude adapts to the actual request.</pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip">
+        <div class="tip-num">6</div>
+        <div class="tip-body">
+          <h3>Think through setup</h3>
+          <p>Some skills need context before they can work correctly — which warehouse environment? which Slack channel for output? Rather than hardcoding these or silently guessing, have Claude ask once on first run and store the answers in a <code>config.json</code> inside the skill directory. Every subsequent run reads the config and skips setup entirely. This makes skills portable across team members without becoming rigid.</p>
+          <div class="tip-example">
+            <span class="ex-label">Setup pattern</span>
+<pre>On first run: check for <span class="key">config.json</span> — if missing, ask the user:
+  "Which warehouse environment? (prod / staging)"
+  "Which Slack channel for output?"
+
+Store answers: <span class="key">{ "warehouse": "prod", "channel": "#data-team" }</span>
+
+Subsequent runs: read config silently, skip setup entirely.</pre>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── ADVANCED ── -->
+<section id="s4">
+  <div class="container">
+    <div class="eyebrow">03 · Advanced Patterns</div>
+    <h2>Four patterns that<br>raise the ceiling</h2>
+    <p>These patterns unlock a different class of capability once you have the basics in place. Each solves a real problem in data science workflows that simpler skills can't address.</p>
+
+    <div class="adv-grid">
+
+      <div class="adv-card">
+        <div class="adv-tag">Hooks on demand</div>
+        <h3>Session-scoped guardrails</h3>
+        <p>Skills can register hooks that activate only when the skill is called and expire when the session ends. Useful for guardrails you don't want running all the time — but absolutely need when touching production data or running destructive operations.</p>
+        <div class="adv-code"><pre>/careful
+# Blocks: DROP TABLE, DELETE FROM,
+# rm -rf, force-push to main.
+# Active only for this session —
+# won't interfere with normal work.</pre></div>
+      </div>
+
+      <div class="adv-card">
+        <div class="adv-tag">Memory &amp; state</div>
+        <h3>Skills that remember across sessions</h3>
+        <p>Skills can write and read persistent state that survives upgrades. Log every analysis run — next session, Claude reads its own history and knows what's already been explored, without you having to brief it again.</p>
+        <div class="adv-grounding">
+          <span class="term">$CLAUDE_PLUGIN_DATA</span> — the stable storage directory allocated per skill. Unlike the skill folder itself (wiped on upgrade), data written here persists. <a class="inline-link" href="https://code.claude.com/docs/en/skills" target="_blank">See docs →</a>
+        </div>
+        <div class="adv-code"><pre># analyses.log (append-only)
+2025-03-17 | cohort Q1  | n=42k
+2025-03-18 | funnel wk11| -12% act
+# Next run: Claude diffs automatically</pre></div>
+      </div>
+
+      <div class="adv-card">
+        <div class="adv-tag">Scripts &amp; helpers</div>
+        <h3>Give Claude code to compose from</h3>
+        <p>Embed helper libraries in <code>scripts/</code> so Claude spends its turns on composition logic — deciding what to analyze and how — rather than reconstructing boilerplate from scratch. The richer your helpers, the more sophisticated the analysis it can produce on demand.</p>
+        <div class="adv-code"><pre># scripts/fetch_events.py
+def get_cohort(start, end, segment):
+    # Credentials + standard filters
+    # Canonical join logic baked in
+    # Claude composes on top of this</pre></div>
+      </div>
+
+      <div class="adv-card">
+        <div class="adv-tag">Composing skills</div>
+        <h3>Skills that invoke other skills</h3>
+        <p>Reference other installed skills by name in your instructions. Claude will invoke them automatically, enabling multi-skill pipelines triggered by a single command. Dependency management is manual for now — document what your skill depends on explicitly.</p>
+        <div class="adv-grounding">
+          <span class="term">PreToolUse</span> — a hook that fires before any tool call, letting you intercept, log, or block specific actions. Used for measuring skill usage across a team. <a class="inline-link" href="https://code.claude.com/docs/en/skills#frontmatter-reference" target="_blank">See docs →</a>
+        </div>
+        <div class="adv-code"><pre># notebook-report skill
+# Depends on: funnel-query,
+#   cohort-compare, grafana
+# Claude chains them — one command,
+# full pipeline output.</pre></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ── ORG SCALE ── -->
+<section id="s5">
+  <div class="container">
+    <div class="eyebrow">04 · Org Scale</div>
+    <h2>From personal tool<br>to team infrastructure</h2>
+    <p>A skill one person uses is useful. A skill the whole team uses compounds in value. Distribution, governance, and measurement are what bridge that gap.</p>
+
+    <div class="scale-cols">
+      <div class="scale-card">
+        <h3>Repo-checked skills</h3>
+        <p>Check skills into <code>.claude/skills/</code> in your repo. Everyone on the project gets them automatically on clone. Simple, zero-friction, works well for small teams with shared codebases.</p>
+        <p style="margin-top:0.6rem;font-size:0.82rem;color:var(--text-muted);">Every checked-in skill adds to the model's context window. As your skill library grows, that cost compounds.</p>
+        <span class="path">./.claude/skills/</span>
+      </div>
+      <div class="scale-card b">
+        <h3>Plugin marketplace</h3>
+        <p>An internal marketplace where engineers publish skills and teammates install only what they need. Keeps context lean. Enables org-wide distribution without centralizing control or bloating every project.</p>
+        <p style="margin-top:0.6rem;font-size:0.82rem;color:var(--text-muted);">Requires lightweight governance to avoid skill sprawl and redundancy.</p>
+        <span class="path"><a class="inline-link" href="https://code.claude.com/docs/en/plugin-marketplaces" target="_blank">Plugin marketplace docs →</a></span>
+      </div>
+    </div>
+
+    <p style="font-family:var(--mono);font-size:0.62rem;letter-spacing:0.16em;text-transform:uppercase;color:var(--text-muted);margin:2.5rem 0 1rem;">Lightweight governance flow</p>
+    <div class="flow-steps">
+      <div class="flow-step">
+        <span class="step-label">Step 1</span>
+        <span class="step-name">Build &amp; sandbox in GitHub</span>
+        <span class="flow-arrow">›</span>
+      </div>
+      <div class="flow-step">
+        <span class="step-label">Step 2</span>
+        <span class="step-name">Share in Slack, invite use</span>
+        <span class="flow-arrow">›</span>
+      </div>
+      <div class="flow-step">
+        <span class="step-label">Step 3</span>
+        <span class="step-name">Wait for traction</span>
+        <span class="flow-arrow">›</span>
+      </div>
+      <div class="flow-step">
+        <span class="step-label">Step 4</span>
+        <span class="step-name">PR to marketplace</span>
+      </div>
+    </div>
+
+    <p style="font-size:0.86rem; margin-bottom:1.5rem;">No central committee decides what gets in — traction decides. Skill owners are accountable for maintaining their own skills. A <code>PreToolUse</code> hook logging every invocation lets you see what's being used and what's undertriggering relative to expectations.</p>
+
+    <div class="warning">
+      <span class="warning-mark">⚠</span>
+      <p>It's easy to create redundant or low-quality skills. A second pair of eyes on the description and gotchas section — before a skill reaches the marketplace — is the minimum viable curation step.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── TAXONOMY ── -->
+<section id="s6">
+  <div class="container">
+    <span class="appendix-label">Appendix · Reference</span>
+    <h2>The taxonomy:<br>what is your team missing?</h2>
+    <p>Skills cluster into nine recurring types. Read this as a gap analysis — not a checklist. Which of these does your team not have yet?</p>
+
+    <table class="taxonomy-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Type</th>
+          <th>Data Science Example</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>01</td><td>Library &amp; API Reference</td><td>Internal data platform CLI, dbt model conventions, canonical warehouse query patterns</td></tr>
+        <tr><td>02</td><td>Product Verification</td><td>Pipeline output assertion scripts, dashboard smoke tests, data quality checks</td></tr>
+        <tr><td>03</td><td>Data Fetching &amp; Analysis</td><td>funnel-query, cohort-compare, Grafana datasource lookup, canonical event joins</td></tr>
+        <tr><td>04</td><td>Business Process &amp; Automation</td><td>weekly-metrics-recap, anomaly-triage-post, model-performance-summary</td></tr>
+        <tr><td>05</td><td>Code Scaffolding &amp; Templates</td><td>new-notebook template, new-dbt-model with your team's annotations pre-wired</td></tr>
+        <tr><td>06</td><td>Code Quality &amp; Review</td><td>query-style enforcement, testing-practices for pipelines, adversarial analysis review</td></tr>
+        <tr><td>07</td><td>CI/CD &amp; Deployment</td><td>babysit-pipeline, promote-to-prod, monitor-scheduled-job</td></tr>
+        <tr><td>08</td><td>Runbooks</td><td>data-incident-runner, log-correlator for pipeline failures, oncall-investigation</td></tr>
+        <tr><td>09</td><td>Infrastructure Operations</td><td>cost-investigation for storage/egress spikes, orphaned-table-cleanup, dependency-audit</td></tr>
+      </tbody>
+    </table>
+
+    <div class="gap-prompt">
+      <p>Which of these does your team not have yet?</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── CTA ── -->
+<section id="s7">
+  <div class="container">
+    <div class="cta-inner">
+      <div class="eyebrow">Your move</div>
+      <h2>Your first skill is<br>15 minutes away —<br><em>start with one pain point</em></h2>
+      <p>You don't need a perfect skill. You need a first one. Pick the thing that slows you down most when working with Claude today — a table it doesn't know, a join it always gets wrong, a pattern it has to reconstruct every time. That's your skill.</p>
+      <p>Skill Creator does the scaffolding. You bring one real problem. The result is a working <code>SKILL.md</code> you can refine from there.</p>
+
+      <div class="cta-box">
+        <div class="cta-box-text">
+          <h3>Use Skill Creator to scaffold your first skill</h3>
+          <p>Skill Creator is a built-in tool in Claude Code that walks you through creating a skill from scratch — asking the right questions, generating the folder structure, and writing an initial <code>SKILL.md</code>. No blank page.</p>
+          <div class="investment">
+            <div class="inv-item">
+              <span class="inv-num">15</span>
+              <span class="inv-label">Minutes to first skill</span>
+            </div>
+            <div class="inv-item">
+              <span class="inv-num">1</span>
+              <span class="inv-label">Real pain point needed</span>
+            </div>
+            <div class="inv-item">
+              <span class="inv-num">0</span>
+              <span class="inv-label">Blank pages to face</span>
+            </div>
+          </div>
+        </div>
+        <a href="https://code.claude.com/docs/en/skills" target="_blank" class="cta-btn">
+          Open Skill Creator
+          <span class="cmd">in Claude Code</span>
+        </a>
+      </div>
+
+      <div class="closing-links">
+        <a href="https://code.claude.com/docs/en/skills" class="closing-link" target="_blank">Skills documentation</a>
+        <a href="https://anthropic.skilljar.com/introduction-to-agent-skills" class="closing-link" target="_blank">Agent Skills course</a>
+        <a href="https://code.claude.com/docs/en/skills#frontmatter-reference" class="closing-link" target="_blank">Frontmatter reference</a>
+        <a href="https://code.claude.com/docs/en/plugin-marketplaces" class="closing-link" target="_blank">Plugin marketplaces</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const bar = document.getElementById('progress-bar');
+  window.addEventListener('scroll', () => {
+    const pct = window.scrollY / (document.body.scrollHeight - window.innerHeight) * 100;
+    bar.style.width = pct + '%';
+  }, { passive: true });
+
+  const sections = document.querySelectorAll('section');
+  const navLinks = document.querySelectorAll('.nav-link');
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        const id = entry.target.id;
+        navLinks.forEach(l => l.classList.toggle('active', l.getAttribute('href') === '#' + id));
+      }
+    });
+  }, { threshold: 0.1 });
+
+  sections.forEach(s => observer.observe(s));
+
+  navLinks.forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelector(link.getAttribute('href'))?.scrollIntoView({ behavior: 'smooth' });
+    });
+  });
+</script>
+</body>
+</html>
