@@ -1,0 +1,32 @@
+# Data Science Skills Library - Dependencies
+# Install: pip install -r requirements.txt
+
+# ─── Core (required for all skills) ───────────────────────
+pandas>=2.0,<3.0
+numpy>=1.23,<2.0
+scipy>=1.10
+scikit-learn>=1.3
+joblib>=1.3
+
+# ─── Feature Engineering ──────────────────────────────────
+featurewiz>=0.4
+lightgbm>=4.0
+
+# ─── EDA Visualization & Statistics ───────────────────────
+matplotlib>=3.5
+seaborn>=0.11
+statsmodels>=0.13
+
+# ─── Optional: uncomment as needed ────────────────────────
+# chardet>=5.0              # Encoding detection (data-cleaning)
+# missingno>=0.5            # Null visualization (data-cleaning)
+# openpyxl>=3.1             # Excel .xlsx support (data-cleaning)
+# sqlalchemy>=2.0           # SQL database support (data-cleaning)
+# category_encoders>=2.5    # Advanced categorical encoding (feature-engineering)
+# great_expectations>=0.15  # Data contract validation (data-quality-assurance)
+# PyYAML>=6.0               # YAML contract parsing (data-quality-assurance)
+
+# ─── Optional: Scaling (for datasets > 1M rows) ──────────
+# dask[dataframe]>=2023.1   # Distributed DataFrames
+# polars>=0.20              # Fast single-machine DataFrames
+# pyarrow>=12.0             # Parquet/Arrow backend

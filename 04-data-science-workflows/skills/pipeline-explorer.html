@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Science Pipeline Explorer</title>
+<style>
+:root {
+  --bg: #F7F6F2;
+  --surface: #FFFFFF;
+  --border: #E0DED8;
+  --text-primary: #1C1C1E;
+  --text-secondary: #6B6B6B;
+  --text-tertiary: #9A9A9A;
+  --blue: #4A6FA5;
+  --blue-lt: #EEF2F8;
+  --blue-dk: #3A5F95;
+  --amber: #C97D2E;
+  --amber-lt: #FDF4EB;
+  --green: #4A8C6F;
+  --green-lt: #EEF5F1;
+  --red: #B94A48;
+  --red-lt: #FCF0EF;
+  --font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --mono: 'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  --r: 6px;
+  --sh: 0 1px 3px rgba(0,0,0,0.08);
+  --sh2: 0 4px 12px rgba(0,0,0,0.08);
+  --t: 0.18s ease;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text-primary);font-family:var(--font);min-height:100vh;line-height:1.6}
+/* ─── Spine ─── */
+.spine{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border);box-shadow:var(--sh)}
+.spine-inner{max-width:1120px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:0.85rem 2rem;gap:1rem}
+.spine-stages{display:flex;align-items:center;flex:1;min-width:0}
+.spine-node{display:flex;flex-direction:column;align-items:center;gap:0.25rem;cursor:pointer;flex:1;position:relative}
+.spine-node::after{content:'';position:absolute;top:14px;left:calc(50% + 18px);width:calc(100% - 36px);height:2px;background:var(--border);z-index:-1}
+.spine-node:last-child::after{display:none}
+.spine-node.visited::after{background:var(--green)}
+.spine-dot{width:28px;height:28px;border-radius:50%;border:2px solid var(--border);background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:0.75rem;transition:all var(--t);position:relative;z-index:1;color:var(--text-tertiary)}
+.spine-node.visited .spine-dot{background:var(--green);border-color:var(--green);color:#fff}
+.spine-node.active .spine-dot{background:var(--blue);border-color:var(--blue);color:#fff;box-shadow:0 0 0 4px var(--blue-lt)}
+.spine-label{font-size:0.65rem;color:var(--text-tertiary);text-align:center;font-weight:500;white-space:nowrap;transition:color var(--t)}
+.spine-node.active .spine-label,.spine-node.visited .spine-label{color:var(--text-secondary)}
+.task-badge{font-size:0.72rem;font-weight:600;color:var(--blue);background:var(--blue-lt);padding:0.3rem 0.85rem;border-radius:20px;white-space:nowrap;cursor:pointer;border:none;font-family:var(--font);transition:all var(--t);flex-shrink:0}
+.task-badge:hover{background:var(--blue);color:#fff}
+/* ─── Main ─── */
+.main{max-width:1120px;margin:0 auto;padding:3rem 2rem 6rem}
+/* ─── Landing ─── */
+.landing{text-align:center;padding:4rem 0 2rem}
+.landing h1{font-size:2.6rem;font-weight:700;letter-spacing:-0.03em;margin-bottom:1rem;line-height:1.2}
+.landing h1 span{color:var(--blue)}
+.landing .hook{font-size:1.05rem;color:var(--text-secondary);max-width:560px;margin:0 auto 2.5rem;line-height:1.7}
+.promises{display:grid;grid-template-columns:repeat(3,1fr);gap:1.25rem;margin-bottom:2.5rem;text-align:left}
+.pcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:1.5rem;box-shadow:var(--sh)}
+.pcard .icon{font-size:1.4rem;margin-bottom:0.6rem}
+.pcard h3{font-size:0.85rem;font-weight:700;margin-bottom:0.35rem}
+.pcard p{font-size:0.82rem;color:var(--text-secondary);line-height:1.55}
+/* ─── Buttons ─── */
+.btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.75rem 1.75rem;border-radius:var(--r);font-size:0.875rem;font-weight:600;cursor:pointer;font-family:var(--font);transition:all var(--t);border:1px solid var(--border);background:var(--surface);color:var(--text-primary)}
+.btn:hover{background:var(--bg)}
+.btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 2px 8px rgba(74,111,165,0.25)}
+.btn-primary:hover{background:var(--blue-dk);transform:translateY(-1px);box-shadow:0 4px 12px rgba(74,111,165,0.3)}
+.btn-lg{padding:0.9rem 2.5rem;font-size:1rem}
+/* ─── Task Select ─── */
+.section-h{text-align:center;margin-bottom:2.5rem}
+.section-h h2{font-size:1.7rem;font-weight:700;letter-spacing:-0.02em;margin-bottom:0.4rem}
+.section-h p{color:var(--text-secondary);font-size:0.9rem}
+.task-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:2rem}
+.tcard{background:var(--surface);border:2px solid var(--border);border-radius:var(--r);padding:1.5rem 1rem 1.25rem;cursor:pointer;transition:all var(--t);text-align:center;box-shadow:var(--sh)}
+.tcard:hover{border-color:var(--blue);box-shadow:var(--sh2);transform:translateY(-2px)}
+.tcard.selected{border-color:var(--blue);background:var(--blue-lt)}
+.tcard .ticon{font-size:2rem;margin-bottom:0.6rem;line-height:1}
+.tcard .tname{font-size:0.875rem;font-weight:700;margin-bottom:0.4rem}
+.tcard .texample{font-size:0.73rem;color:var(--text-secondary);font-style:italic;margin-bottom:0.7rem;line-height:1.4;min-height:2.8em}
+.tcard .tchallenge{font-size:0.7rem;color:var(--amber);background:var(--amber-lt);padding:0.25rem 0.5rem;border-radius:4px;line-height:1.35}
+/* ─── Stage ─── */
+.stage-header{display:flex;align-items:flex-start;gap:1.5rem;margin-bottom:2.5rem;padding-bottom:2rem;border-bottom:1px solid var(--border)}
+.stage-num-circle{width:54px;height:54px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;box-shadow:0 2px 8px rgba(74,111,165,0.25)}
+.stage-meta h2{font-size:1.7rem;font-weight:700;letter-spacing:-0.02em;margin-bottom:0.2rem}
+.stage-goal{font-size:0.92rem;color:var(--text-secondary);font-style:italic}
+.stage-tags{display:flex;gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap}
+/* ─── Accordion ─── */
+.acc{border:1px solid var(--border);border-radius:var(--r);margin-bottom:0.65rem;overflow:hidden;background:var(--surface)}
+.acc-head{display:flex;align-items:center;justify-content:space-between;padding:0.9rem 1.2rem;cursor:pointer;user-select:none}
+.acc-head:hover{background:#FAFAF8}
+.acc-hl{display:flex;align-items:center;gap:0.75rem}
+.acc-icon{width:28px;height:28px;border-radius:5px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:0.9rem;flex-shrink:0}
+.acc-title{font-size:0.875rem;font-weight:600}
+.acc-chevron{font-size:0.75rem;color:var(--text-tertiary);transition:transform var(--t)}
+.acc.open .acc-chevron{transform:rotate(90deg)}
+.acc-body{display:none;padding:0 1.2rem 1.2rem;border-top:1px solid var(--border)}
+.acc.open .acc-body{display:block}
+/* ─── Content atoms ─── */
+.prose{font-size:0.875rem;color:var(--text-secondary);line-height:1.7}
+.prose strong{color:var(--text-primary)}
+.prose p{margin-bottom:0.65rem}
+.prose p:last-child{margin-bottom:0}
+.callout{padding:0.8rem 1rem;border-radius:var(--r);margin:0.9rem 0;font-size:0.85rem;line-height:1.6}
+.callout-w{background:var(--amber-lt);border-left:3px solid var(--amber);color:#7A4B1A}
+.callout-i{background:var(--blue-lt);border-left:3px solid var(--blue);color:#2A4F85}
+.callout-s{background:var(--green-lt);border-left:3px solid var(--green);color:#2A5C42}
+.callout-d{background:var(--red-lt);border-left:3px solid var(--red);color:#7A2A28}
+.slabel{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-tertiary);margin:1.1rem 0 0.6rem}
+.steps{display:flex;flex-direction:column;gap:0.45rem;margin-top:0.8rem}
+.step{display:flex;align-items:flex-start;gap:0.65rem;padding:0.55rem 0.7rem;background:var(--bg);border-radius:4px;font-size:0.84rem}
+.snum{width:20px;height:20px;border-radius:50%;background:var(--blue);color:#fff;font-size:0.65rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+.step strong{color:var(--text-primary)}
+.step span{color:var(--text-secondary)}
+.concept-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:0.7rem;margin-top:0.8rem}
+.ccard{border:1px solid var(--border);border-radius:var(--r);padding:0.9rem;background:var(--bg)}
+.cterm{font-size:0.77rem;font-weight:700;color:var(--blue);font-family:var(--mono);margin-bottom:0.35rem}
+.cdef{font-size:0.79rem;color:var(--text-secondary);line-height:1.5}
+.caction{font-size:0.73rem;color:var(--green);margin-top:0.35rem;font-weight:500}
+.task-box{background:var(--blue-lt);border:1px solid #C5D5E8;border-radius:var(--r);padding:0.9rem 1.1rem;margin-top:0.9rem}
+.task-box-label{font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--blue);margin-bottom:0.4rem}
+.task-box-content{font-size:0.86rem;color:var(--text-secondary);line-height:1.65}
+.task-box-content strong{color:var(--text-primary)}
+/* ─── Artifact card (dark) ─── */
+.artifact{background:#0D1117;border-radius:var(--r);padding:1.1rem 1.25rem;margin-top:0.9rem}
+.artifact-fn{font-family:var(--mono);font-size:0.78rem;color:#58A6FF;margin-bottom:0.65rem;display:flex;align-items:center;gap:0.4rem}
+.artifact-code{font-family:var(--mono);font-size:0.76rem;line-height:1.75;color:#C9D1D9;white-space:pre}
+.jk{color:#79C0FF}.js{color:#A5D6FF}.jn{color:#FFA657}.jb{color:#FF7B72}.jc{color:#8B949E}
+/* ─── QA dimensions ─── */
+.dim-list{display:flex;flex-direction:column;gap:0.75rem;margin-top:0.9rem}
+.dim-row{display:grid;grid-template-columns:140px 1fr 220px;align-items:center;gap:1rem}
+.dim-label{font-size:0.84rem;font-weight:600}
+.dim-track{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.dim-bar{height:100%;border-radius:4px;background:var(--green);transition:width 0.6s ease}
+.dim-desc{font-size:0.75rem;color:var(--text-secondary);line-height:1.4}
+/* ─── Verdict cards ─── */
+.verdict-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1rem}
+.vcard{border:2px solid var(--border);border-radius:var(--r);padding:1.2rem;cursor:pointer;transition:all var(--t)}
+.vcard:hover{transform:translateY(-2px);box-shadow:var(--sh2)}
+.vcard.vpass{border-color:var(--green)}
+.vcard.vcond{border-color:var(--amber)}
+.vcard.vfail{border-color:var(--red)}
+.vcard.vactive.vpass{background:var(--green-lt)}
+.vcard.vactive.vcond{background:var(--amber-lt)}
+.vcard.vactive.vfail{background:var(--red-lt)}
+.vicon{font-size:1.4rem;margin-bottom:0.4rem}
+.vname{font-size:0.92rem;font-weight:700;margin-bottom:0.35rem}
+.vdesc{font-size:0.8rem;color:var(--text-secondary);line-height:1.4;margin-bottom:0.75rem}
+.vlist{font-size:0.78rem;display:flex;flex-direction:column;gap:0.25rem}
+.vi{display:flex;align-items:center;gap:0.35rem}
+.vi.ok{color:var(--green)}.vi.no{color:var(--red);text-decoration:line-through;opacity:0.7}
+/* ─── Miss cards ─── */
+.miss-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1rem}
+.mcard{border:1px solid var(--border);border-radius:var(--r);padding:1.2rem;background:var(--surface)}
+.mtype{font-family:var(--mono);font-size:0.84rem;font-weight:700;margin-bottom:0.25rem}
+.mplain{font-size:0.75rem;color:var(--text-secondary);font-style:italic;margin-bottom:0.7rem}
+.mwhat{font-size:0.8rem;line-height:1.5;color:var(--text-secondary);margin-bottom:0.5rem}
+.mfix{font-size:0.75rem;background:var(--bg);border-radius:4px;padding:0.45rem 0.7rem;font-family:var(--mono);color:var(--blue);margin-top:0.4rem;line-height:1.4}
+/* ─── Encoding cards ─── */
+.enc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1rem}
+.ecard{border:1px solid var(--border);border-radius:var(--r);padding:1rem;background:var(--surface)}
+.ename{font-family:var(--mono);font-size:0.8rem;font-weight:700;color:var(--blue);margin-bottom:0.35rem}
+.ewhen{font-size:0.79rem;color:var(--text-secondary);margin-bottom:0.45rem;line-height:1.5}
+.ewarn{font-size:0.73rem;color:var(--amber)}
+/* ─── SULOV diagram ─── */
+.sulov{display:flex;align-items:stretch;gap:0.75rem;margin-top:1rem;overflow-x:auto;padding:1rem;background:var(--bg);border-radius:var(--r);flex-wrap:nowrap}
+.sbox{min-width:150px;border:1px solid var(--border);border-radius:var(--r);padding:1rem;background:var(--surface);text-align:center;flex-shrink:0}
+.sbox-title{font-family:var(--mono);font-size:0.78rem;font-weight:700;color:var(--blue);margin-bottom:0.35rem}
+.sbox-desc{font-size:0.74rem;color:var(--text-secondary);line-height:1.4}
+.sarrow{font-size:1.2rem;color:var(--text-tertiary);display:flex;align-items:center;flex-shrink:0}
+/* ─── Navigation ─── */
+.stage-nav{display:flex;align-items:center;justify-content:space-between;margin-top:3rem;padding-top:1.75rem;border-top:1px solid var(--border)}
+.nav-center{font-size:0.82rem;color:var(--text-secondary);text-align:center}
+/* ─── Completion ─── */
+.completion{text-align:center;padding:3rem 0 1rem}
+.completion h2{font-size:2rem;font-weight:700;letter-spacing:-0.02em;margin-bottom:0.6rem}
+.artifact-chain{display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:0.35rem;margin:2.5rem 0;padding:1.5rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
+.cn{display:flex;flex-direction:column;align-items:center;gap:0.3rem}
+.cn-icon{font-size:1.1rem}
+.cn-label{font-family:var(--mono);font-size:0.67rem;color:var(--blue);background:var(--blue-lt);padding:0.15rem 0.45rem;border-radius:3px;white-space:nowrap}
+.cn-arrow{font-size:1rem;color:var(--text-tertiary);margin-bottom:-0.4rem}
+.glo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:0.7rem;margin-top:1.25rem;text-align:left}
+/* ─── Utils ─── */
+.tag{display:inline-block;font-size:0.68rem;font-weight:600;padding:0.12rem 0.5rem;border-radius:4px}
+.tb{background:var(--blue-lt);color:var(--blue)}
+.tg{background:var(--green-lt);color:var(--green)}
+.ta{background:var(--amber-lt);color:var(--amber)}
+.tr{background:var(--red-lt);color:var(--red)}
+.divider{border:none;border-top:1px solid var(--border);margin:1.25rem 0}
+.checklist{display:flex;flex-direction:column;gap:0.35rem;margin-top:0.75rem}
+.ci{display:flex;align-items:flex-start;gap:0.55rem;font-size:0.84rem;color:var(--text-secondary)}
+.ci::before{content:'☐';color:var(--text-tertiary);flex-shrink:0;line-height:1.5}
+.flow-chart{margin:1rem 0;background:var(--bg);border-radius:var(--r);padding:1rem;font-size:0.82rem}
+.flow-row{display:flex;align-items:flex-start;gap:0.5rem;margin-bottom:0.35rem}
+.flow-branch{padding-left:1.5rem;border-left:2px solid var(--border);margin-left:0.8rem;margin-top:0.25rem;padding-top:0.25rem}
+.flow-q{font-weight:600;color:var(--text-primary)}
+.flow-y{color:var(--green);font-weight:600}
+.flow-n{color:var(--red);font-weight:600}
+.flow-a{color:var(--text-secondary)}
+@media(max-width:768px){
+  .task-cards{grid-template-columns:1fr 1fr}
+  .promises{grid-template-columns:1fr}
+  .verdict-cards,.miss-cards,.enc-grid{grid-template-columns:1fr}
+  .dim-row{grid-template-columns:120px 1fr}
+  .dim-desc{display:none}
+  .landing h1{font-size:1.8rem}
+  .spine-label{display:none}
+}
+</style>
+</head>
+<body>
+
+<header class="spine">
+  <div class="spine-inner">
+    <div class="spine-stages" id="spine-stages"></div>
+    <button class="task-badge" id="task-badge" onclick="goToTaskSelect()" style="display:none"></button>
+  </div>
+</header>
+
+<main class="main" id="app"></main>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════
+const state = {
+  screen: 'landing',   // landing | task-select | stage-1..5 | complete
+  task: null,          // classification | regression | timeseries | nlp | clustering
+  visited: new Set(),
+  open: new Set()      // open accordion IDs
+};
+
+function stageIndex() {
+  const m = state.screen.match(/stage-(\d)/);
+  return m ? parseInt(m[1]) : 0;
+}
+
+// ═══════════════════════════════════════════════════════
+// TASK DATA
+// ═══════════════════════════════════════════════════════
+const TASKS = {
+  classification: {
+    icon: '🎯', name: 'Classification',
+    example: '"Will this customer churn?"',
+    challenge: 'Class imbalance is your enemy',
+    color: 'tb'
+  },
+  regression: {
+    icon: '📈', name: 'Regression',
+    example: '"How much will this cost?"',
+    challenge: 'Skewed targets break assumptions',
+    color: 'tb'
+  },
+  timeseries: {
+    icon: '🕐', name: 'Time-Series',
+    example: '"What happens next month?"',
+    challenge: 'The past must stay in the past',
+    color: 'tb'
+  },
+  nlp: {
+    icon: '📝', name: 'NLP',
+    example: '"What does this review say?"',
+    challenge: 'Text is messy before it\'s useful',
+    color: 'tb'
+  },
+  clustering: {
+    icon: '🔵', name: 'Clustering',
+    example: '"What groups exist in my data?"',
+    challenge: 'No target — you\'re flying blind',
+    color: 'tb'
+  }
+};
+
+// Task-specific content for each stage
+const TASK_CONTENT = {
+  cleaning: {
+    classification: `<strong>Target validation:</strong> Confirm the target column has a categorical or boolean dtype. Values like <span class="mono">0/1</span> or <span class="mono">True/False</span> are fine; check that no numeric sentinel values (-999) are masquerading as categories. <strong>Class distribution:</strong> Run <span class="mono">df[target].value_counts(normalize=True)</span> now so you spot severe imbalance (e.g. 95/5 splits) before modeling.`,
+    regression: `<strong>Target validation:</strong> Confirm the target column is numeric. Cast any mistaken <span class="mono">object</span> targets to <span class="mono">float64</span>. <strong>Range check:</strong> Run <span class="mono">df[target].describe()</span> — negative values in a revenue column or values above physical maximums are cleaning issues, not outliers.`,
+    timeseries: `<strong>Sort first, always:</strong> <span class="mono">df.sort_values('timestamp', inplace=True)</span> before any other step. <strong>Detect gaps:</strong> Check for irregular frequency with <span class="mono">df['timestamp'].diff().value_counts()</span>. Missing timestamps create invisible holes in your time series. <strong>Deduplication key:</strong> Use <span class="mono">[entity_id, timestamp]</span> as the dedup key — not just timestamp.`,
+    nlp: `<strong>Encoding first:</strong> Fix character encoding issues before any other cleaning — mojibake (garbled characters like "â€™") corrupts text irreversibly. <strong>Whitespace normalization:</strong> Collapse multi-space gaps, strip leading/trailing spaces, and normalize Unicode (NFC form). <strong>Don't over-clean:</strong> Preserve punctuation at this stage — tokenization decisions belong in feature engineering.`,
+    clustering: `<strong>Feature consistency is everything:</strong> Without a target variable to guide you, inconsistent features mislead distance calculations. Ensure unit consistency — mixing dollars and percentages in the same cluster creates meaningless groupings. <strong>No target deduplication:</strong> When deduplicating, use business entity keys only; do not rely on any one column being "the outcome."`
+  },
+  qa: {
+    classification: `<strong>Class balance check:</strong> Flag as critical if minority class &lt; 5% of data — this affects which metrics matter (accuracy is misleading; use F1/AUC). <strong>Target leakage scan:</strong> Check for features with suspiciously high correlation to the target — correlation &gt; 0.95 often signals leakage, not a useful feature. <strong>Completeness by class:</strong> Null rates that differ across classes are a signal — missingness may be informative.`,
+    regression: `<strong>Target distribution:</strong> Check skewness of the target variable. <span class="mono">|skew| &gt; 1</span> suggests log transform is needed before modeling. Visualize the distribution — bimodal targets (e.g. two customer segments) may need separate models. <strong>Range violations:</strong> Negative values in non-negative targets (price, count, time) are accuracy failures.`,
+    timeseries: `<strong>Temporal completeness:</strong> Verify no time gaps exceed your expected frequency. Gap rate &gt; 5% is a completeness failure for time-series. <strong>Timeliness is critical:</strong> Check <span class="mono">max(timestamp)</span> — stale data can be more dangerous than missing data for forecasting. <strong>Entity consistency:</strong> Confirm all expected entities appear throughout the time range (balanced panel).`,
+    nlp: `<strong>Text distribution check:</strong> Inspect document length distribution (<span class="mono">df[text].str.len().describe()</span>). Extremely short documents (&lt; 5 chars) or suspiciously identical documents may need filtering. <strong>Language consistency:</strong> If multilingual text is unexpected, flag it. <strong>Empty text rate:</strong> Null/empty text after cleaning is a completeness failure.`,
+    clustering: `<strong>Zero-variance columns:</strong> Columns that are the same value for every row add no clustering signal — flag them for removal. <strong>Scale verification:</strong> QA should flag when numeric columns have vastly different scales (e.g. one column ranges 0–1, another 0–1,000,000) — this will dominate distance metrics unfairly. <strong>No class balance to check:</strong> Skip target-related QA checks; there is no target.`
+  },
+  imputation: {
+    classification: `<strong>Never impute the target:</strong> If the target column has missing values, drop those rows — do not fill them. Imputed labels corrupt your model's learning signal. <strong>Missingness as a feature:</strong> For MNAR columns, the <span class="mono">_was_missing</span> indicator column is especially valuable in classification — the fact that a field was blank can be predictive of the target class. <strong>Class-stratified imputation:</strong> Check if null rates differ by class before choosing imputation strategy.`,
+    regression: `<strong>Never impute the target:</strong> Drop rows where the target is null. <strong>Target correlation check:</strong> Before imputing features, run <span class="mono">df.isnull().corrwith(df[target])</span> — high correlation between a column's missingness and the target value signals MNAR, not MCAR. <strong>Scale-aware:</strong> Median imputation preserves scale better than mean for skewed numeric features common in regression targets.`,
+    timeseries: `<strong>Backward-only interpolation:</strong> For time-series, always use forward-fill or backward-fill (not interpolation that uses future values). <span class="mono">df.fillna(method='ffill')</span> is safe; fitting a KNN imputer across the full time series leaks future values into the past. <strong>Temporal gap limit:</strong> If a gap exceeds 3× your sampling frequency, don't interpolate — flag it as a structural gap and create a <span class="mono">gap_indicator</span> column.`,
+    nlp: `<strong>Use [MISSING] token:</strong> For NLP tasks, replace null text with the literal string <span class="mono">"[MISSING]"</span> rather than dropping rows or using an empty string. This lets the model learn that missingness is a pattern. <strong>Never KNN-impute text:</strong> Statistical imputers don't work on raw text. Use the [MISSING] token approach across all text columns. <strong>Metadata can still use standard imputation:</strong> Non-text columns (author_id, date, length) follow normal MCAR/MAR/MNAR rules.`,
+    clustering: `<strong>Missingness as a signal:</strong> In clustering, MNAR missingness can define a cluster by itself — customers who skip a field may form a behaviorally distinct group. Create <span class="mono">_was_missing</span> indicator columns for all MNAR columns before imputing. <strong>No target to protect:</strong> Standard train/fit/transform leakage rules still apply — fit imputers on the full dataset only if you are not doing train/test evaluation.`
+  },
+  eda: {
+    classification: `<strong>Per-class distributions:</strong> Plot each feature's distribution separately for each class — features that look different across classes are candidates. Use Kruskal-Wallis test for numeric features (works without normality assumption). <strong>Class imbalance visualization:</strong> Plot the target distribution. If &gt; 70/30 split, document resampling strategy options (SMOTE, class weights, threshold adjustment). <strong>ANOVA:</strong> For normally distributed numeric features, use one-way ANOVA to test per-class differences; p &lt; 0.05 = useful feature.`,
+    regression: `<strong>Scatter plots:</strong> Plot each numeric feature vs. the target. Look for linear, monotonic, or non-linear relationships. <strong>Pearson vs. Spearman:</strong> Pearson measures linear correlation (assumes normality); Spearman measures monotonic correlation (works on skewed data). Use both. <strong>Target transformation check:</strong> Plot target distribution — <span class="mono">|skew| &gt; 1</span> suggests applying <span class="mono">np.log1p(target)</span> or using <span class="mono">TransformedTargetRegressor</span>. <strong>Residual analysis:</strong> Check for heteroscedasticity (variance that changes with feature value).`,
+    timeseries: `<strong>ACF and PACF:</strong> Autocorrelation Function shows how correlated a series is with its own past values. PACF isolates the direct effect at each lag. These plots determine which lag features to engineer. <strong>ADF stationarity test:</strong> p &lt; 0.05 = stationary (good). p &gt; 0.05 = non-stationary (apply differencing). Most time-series models require stationarity. <strong>Decomposition:</strong> Decompose the series into trend + seasonality + residual. Visualize all three — unexpected seasonality must be engineered as a feature.`,
+    nlp: `<strong>Token frequency:</strong> Build a frequency distribution of tokens (after basic tokenization). Rare tokens (&lt; 5 occurrences) are typically noise; very common tokens (stop words) add little signal. <strong>Document length distribution:</strong> <span class="mono">df[text].str.len().describe()</span> and plot the histogram. Very long documents may need truncation for transformer models. <strong>Vocabulary analysis:</strong> Unique token count and top-N terms per class reveal if the text is discriminative. <strong>Class-level term frequency:</strong> Which words appear more in class A than class B?`,
+    clustering: `<strong>Hopkins statistic:</strong> Tests if your data actually has cluster structure. H &gt; 0.7 = proceed with clustering. H ≈ 0.5 = your data is random noise — clustering will find patterns that don't exist. Always compute Hopkins before choosing K. <strong>Pairwise scatter plots:</strong> Plot feature pairs coloured by their eventual clusters (iterative). Look for natural separations. <strong>VIF check:</strong> High multicollinearity (VIF &gt; 10) in clustering creates "redundant dimensions" that over-weight that feature's direction in distance calculations.`
+  },
+  features: {
+    classification: `<strong>Fold-based target encoding:</strong> For high-cardinality categoricals, use target encoding — but only with K-fold cross-fitting to prevent leakage. Never compute target statistics on the full training set. <strong>featurewiz default:</strong> featurewiz with default settings is well-tuned for classification. It uses SULOV to remove correlated features, then MRMR to rank by relevance. <strong>Class-stratified cross-validation:</strong> All CV folds must be stratified to preserve class proportions.`,
+    regression: `<strong>log1p transform:</strong> Apply <span class="mono">np.log1p()</span> to right-skewed numeric features (skew &gt; 1). This often substantially improves linear model performance. <strong>Polynomial features:</strong> Consider degree-2 interactions for features that showed non-linear relationships in EDA. Be selective — combinatorial explosion. <strong>Transform the target:</strong> Use sklearn's <span class="mono">TransformedTargetRegressor(transformer=FunctionTransformer(np.log1p))</span> when the target is skewed.`,
+    timeseries: `<strong>Lag features:</strong> Create <span class="mono">feature_lag_1</span>, <span class="mono">feature_lag_7</span>, <span class="mono">feature_lag_30</span> etc. based on your ACF/PACF plots from EDA. Only use lags available at prediction time (temporal leakage guard). <strong>Rolling windows:</strong> Rolling mean and std over windows (e.g. 7-day rolling average) capture short-term trends. <strong>Cyclical encoding:</strong> Encode hour-of-day, day-of-week, month with <span class="mono">sin/cos</span> pairs so the model understands hour 23 and hour 0 are adjacent.`,
+    nlp: `<strong>TF-IDF:</strong> Convert text to a sparse matrix of term frequency × inverse document frequency. This is the standard baseline for NLP classification. Fit only on training data. <strong>Structural features:</strong> Always add <span class="mono">text_length</span>, <span class="mono">word_count</span>, <span class="mono">sentence_count</span>, <span class="mono">avg_word_length</span> as numeric features alongside TF-IDF — they are often surprisingly predictive. <strong>featurewiz on metadata:</strong> Run featurewiz on the non-text numeric features. For text, use TF-IDF directly.`,
+    clustering: `<strong>Manual engineering only:</strong> featurewiz requires a target variable for its MRMR selection — it cannot be used for clustering. All feature selection must be done manually based on EDA findings. <strong>Hopkins-guided selection:</strong> Add features one by one, recomputing Hopkins statistic — a good feature increases clusterability. <strong>Scale normalization required:</strong> Unlike supervised learning where tree models handle scale, clustering algorithms (K-means, DBSCAN) require StandardScaler or MinMaxScaler before fitting.`
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+// STAGE DEFINITIONS
+// ═══════════════════════════════════════════════════════
+const STAGES = [
+  null, // 0 = unused (0 = landing)
+  {
+    icon: '🧹', title: 'Data Cleaning', shortTitle: 'Clean',
+    goal: 'Transform raw, messy data into a structurally consistent DataFrame',
+    artifact: 'cleaning_manifest.json',
+    tags: ['Foundation', 'Required First'],
+    artifactCode: `{
+  <span class="jk">"original_shape"</span>: [<span class="jn">50000</span>, <span class="jn">42</span>],
+  <span class="jk">"final_shape"</span>: [<span class="jn">49800</span>, <span class="jn">40</span>],
+  <span class="jk">"rows_removed"</span>: <span class="jn">200</span>,
+  <span class="jk">"dtype_changes"</span>: {
+    <span class="jk">"revenue"</span>: {<span class="jk">"from"</span>: <span class="js">"object"</span>, <span class="jk">"to"</span>: <span class="js">"float64"</span>},
+    <span class="jk">"created_at"</span>: {<span class="jk">"from"</span>: <span class="js">"object"</span>, <span class="jk">"to"</span>: <span class="js">"datetime64"</span>}
+  },
+  <span class="jk">"columns_renamed"</span>: {<span class="jk">"Customer ID"</span>: <span class="js">"customer_id"</span>},
+  <span class="jk">"encoding_fixes"</span>: [<span class="js">"revenue: 18 sentinel values → NaN"</span>],
+  <span class="jc">// feeds into → data-quality-assurance</span>
+}`
+  },
+  {
+    icon: '📋', title: 'Data Quality Assurance', shortTitle: 'QA',
+    goal: 'Evaluate data and issue a PASS / CONDITIONAL_PASS / FAIL verdict',
+    artifact: 'qa_report.json',
+    tags: ['Gate', 'Required'],
+    artifactCode: `{
+  <span class="jk">"verdict"</span>: <span class="js">"PASS"</span>,
+  <span class="jk">"overall_scores"</span>: {
+    <span class="jk">"completeness"</span>: <span class="jn">91.5</span>,
+    <span class="jk">"consistency"</span>: <span class="jn">88.0</span>,
+    <span class="jk">"accuracy"</span>: <span class="jn">95.2</span>,
+    <span class="jk">"timeliness"</span>: <span class="jn">100.0</span>,
+    <span class="jk">"relevance"</span>: <span class="jn">72.0</span>
+  },
+  <span class="jk">"allowed_downstream_skills"</span>: [
+    <span class="js">"missing-data-imputation"</span>,
+    <span class="js">"eda-comprehensive"</span>,
+    <span class="js">"feature-engineering"</span>
+  ],
+  <span class="jc">// feeds into → missing-data-imputation, eda-comprehensive</span>
+}`
+  },
+  {
+    icon: '🔍', title: 'Missing Data Imputation', shortTitle: 'Impute',
+    goal: 'Diagnose why data is missing, then fill it the right way',
+    artifact: 'imputation_manifest.json',
+    tags: ['Train-Only', 'Leakage Risk'],
+    artifactCode: `{
+  <span class="jk">"columns_imputed"</span>: {
+    <span class="jk">"income"</span>: {
+      <span class="jk">"mechanism"</span>: <span class="js">"MNAR"</span>,
+      <span class="jk">"strategy"</span>: <span class="js">"median + indicator"</span>,
+      <span class="jk">"indicator_col"</span>: <span class="js">"income_was_missing"</span>,
+      <span class="jk">"null_rate_before"</span>: <span class="jn">0.18</span>
+    },
+    <span class="jk">"age"</span>: {
+      <span class="jk">"mechanism"</span>: <span class="js">"MAR"</span>,
+      <span class="jk">"strategy"</span>: <span class="js">"KNNImputer(n_neighbors=5)"</span>,
+      <span class="jk">"null_rate_before"</span>: <span class="jn">0.04</span>
+    }
+  },
+  <span class="jk">"fit_on"</span>: <span class="js">"X_train only"</span>,
+  <span class="jc">// feeds into → eda-comprehensive, feature-engineering</span>
+}`
+  },
+  {
+    icon: '🔭', title: 'Exploratory Data Analysis', shortTitle: 'EDA',
+    goal: 'Discover distributions, relationships, and patterns before modeling',
+    artifact: 'eda_findings.json',
+    tags: ['Discovery', 'Task-Sensitive'],
+    artifactCode: `{
+  <span class="jk">"recommended_transforms"</span>: {
+    <span class="jk">"revenue"</span>: <span class="js">"log1p (skew=2.4)"</span>,
+    <span class="jk">"days_since_signup"</span>: <span class="js">"sqrt (skew=1.2)"</span>
+  },
+  <span class="jk">"feature_candidates"</span>: [
+    <span class="js">"revenue"</span>, <span class="js">"session_count"</span>, <span class="js">"days_since_signup"</span>
+  ],
+  <span class="jk">"drop_candidates"</span>: [<span class="js">"user_agent_raw"</span>],
+  <span class="jk">"class_imbalance"</span>: {<span class="jk">"ratio"</span>: <span class="jn">0.08</span>, <span class="jk">"flag"</span>: <span class="jb">true</span>},
+  <span class="jc">// feeds into → feature-engineering</span>
+}`
+  },
+  {
+    icon: '⚙️', title: 'Feature Engineering', shortTitle: 'Features',
+    goal: 'Build a model-ready feature matrix with zero data leakage',
+    artifact: 'feature_manifest.json',
+    tags: ['Final Gate', 'PASS Only'],
+    artifactCode: `{
+  <span class="jk">"features_selected"</span>: [<span class="js">"revenue_log1p"</span>, <span class="js">"session_count"</span>, <span class="js">"days_since_signup"</span>],
+  <span class="jk">"features_dropped"</span>: [<span class="js">"user_agent_raw"</span>, <span class="js">"signup_date"</span>],
+  <span class="jk">"encodings_applied"</span>: {
+    <span class="jk">"region"</span>: <span class="js">"TargetEncoder (5-fold)"</span>,
+    <span class="jk">"plan_type"</span>: <span class="js">"OneHotEncoder"</span>
+  },
+  <span class="jk">"pipeline_path"</span>: <span class="js">"feature_pipeline.joblib"</span>,
+  <span class="jk">"leakage_check"</span>: <span class="js">"PASSED"</span>,
+  <span class="jc">// feeds into → model training (out of scope)</span>
+}`
+  }
+];
+
+const SPINE_LABELS = ['', 'Clean', 'QA', 'Impute', 'EDA', 'Features'];
+
+// ═══════════════════════════════════════════════════════
+// SPINE RENDER
+// ═══════════════════════════════════════════════════════
+function renderSpine() {
+  const current = stageIndex();
+  const nodes = document.getElementById('spine-stages');
+  let html = '';
+  for (let i = 1; i <= 5; i++) {
+    const visited = state.visited.has(i) && i !== current;
+    const active = i === current;
+    const cls = active ? 'active' : visited ? 'visited' : '';
+    const s = STAGES[i];
+    html += `<div class="spine-node ${cls}" onclick="goToStage(${i})" title="${s.title}">
+      <div class="spine-dot">${visited ? '✓' : active ? s.icon : i}</div>
+      <div class="spine-label">${SPINE_LABELS[i]}</div>
+    </div>`;
+  }
+  nodes.innerHTML = html;
+
+  const badge = document.getElementById('task-badge');
+  if (state.task && state.screen !== 'landing' && state.screen !== 'task-select') {
+    const t = TASKS[state.task];
+    badge.textContent = `${t.icon} ${t.name}`;
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// ACCORDION
+// ═══════════════════════════════════════════════════════
+function toggleAccordion(id) {
+  const el = document.getElementById('acc-' + id);
+  if (!el) return;
+  if (state.open.has(id)) {
+    state.open.delete(id);
+    el.classList.remove('open');
+  } else {
+    state.open.add(id);
+    el.classList.add('open');
+  }
+}
+
+function acc(id, icon, title, content, openByDefault) {
+  if (openByDefault) state.open.add(id);
+  const isOpen = state.open.has(id) ? 'open' : '';
+  return `<div class="acc ${isOpen}" id="acc-${id}">
+    <div class="acc-head" onclick="toggleAccordion('${id}')">
+      <div class="acc-hl">
+        <div class="acc-icon">${icon}</div>
+        <div class="acc-title">${title}</div>
+      </div>
+      <span class="acc-chevron">▶</span>
+    </div>
+    <div class="acc-body">${content}</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+function goTo(screen) {
+  state.screen = screen;
+  const idx = stageIndex();
+  if (idx > 0) state.visited.add(idx);
+  renderAll();
+  window.scrollTo(0, 0);
+}
+function goToStage(n) { goTo(`stage-${n}`); }
+function goToTaskSelect() { goTo('task-select'); }
+function selectTask(t) {
+  state.task = t;
+  renderAll();
+}
+function startJourney() { goTo('task-select'); }
+
+function getTaskContent() {
+  if (!state.task) return '<div class="callout callout-i">Select a modeling task above to see path-specific guidance for this stage.</div>';
+  const idx = stageIndex();
+  const key = ['','cleaning','qa','imputation','eda','features'][idx];
+  if (!key || !TASK_CONTENT[key]) return '';
+  const t = TASKS[state.task];
+  const content = TASK_CONTENT[key][state.task];
+  return `<div class="task-box">
+    <div class="task-box-label">Your path: ${t.icon} ${t.name}</div>
+    <div class="task-box-content">${content}</div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// SCREEN: LANDING
+// ═══════════════════════════════════════════════════════
+function renderLanding() {
+  return `<div class="landing">
+    <h1>The <span>Data Science</span><br>Pipeline Explorer</h1>
+    <p class="hook">Raw data doesn't train models. This guide walks you through every stage of the preparation pipeline — from a messy CSV to a model-ready feature matrix.</p>
+    <div class="promises">
+      <div class="pcard">
+        <div class="icon">🗺️</div>
+        <h3>Choose your path</h3>
+        <p>The pipeline behaves differently depending on whether you're building a classifier, a forecast, or an NLP model. Pick your task and the guide adapts.</p>
+      </div>
+      <div class="pcard">
+        <div class="icon">🔓</div>
+        <h3>Why order matters</h3>
+        <p>Each stage depends on the one before it. Cleaning before QA. QA before imputation. Skipping steps embeds invisible errors that compound downstream.</p>
+      </div>
+      <div class="pcard">
+        <div class="icon">📦</div>
+        <h3>Artifacts at every gate</h3>
+        <p>Each stage produces a JSON artifact that the next stage consumes. These create a reproducible audit trail from raw data to trained model.</p>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-lg" onclick="startJourney()">Choose your modeling task →</button>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// SCREEN: TASK SELECT
+// ═══════════════════════════════════════════════════════
+function renderTaskSelect() {
+  const cards = Object.entries(TASKS).map(([k, t]) => `
+    <div class="tcard${state.task === k ? ' selected' : ''}" data-task="${k}" onclick="selectTask('${k}')">
+      <div class="ticon">${t.icon}</div>
+      <div class="tname">${t.name}</div>
+      <div class="texample">${t.example}</div>
+      <div class="tchallenge">${t.challenge}</div>
+    </div>`).join('');
+
+  const canProceed = state.task !== null;
+  return `<div class="section-h">
+    <h2>What are you building today?</h2>
+    <p>Your choice tailors every stage of the pipeline to your specific modeling context.</p>
+  </div>
+  <div class="task-cards">${cards}</div>
+  <div style="text-align:center;margin-top:1.5rem">
+    <button class="btn btn-primary btn-lg" onclick="goToStage(1)" ${canProceed ? '' : 'disabled'}>
+      ${canProceed ? `Start the pipeline with ${TASKS[state.task].icon} ${TASKS[state.task].name} →` : 'Select a task to continue'}
+    </button>
+    ${!canProceed ? '<p style="margin-top:0.75rem;font-size:0.82rem;color:var(--text-tertiary)">Click a card above to select your modeling task</p>' : ''}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// SCREEN: STAGE 1 — DATA CLEANING
+// ═══════════════════════════════════════════════════════
+function renderStage1() {
+  const s = STAGES[1];
+  const why = `<div class="prose">
+    <p>Every downstream decision — imputation strategy, feature encoding, model choice — rests on the assumption that your DataFrame is structurally sound. A single sentinel value like <strong>-999</strong> hiding as a real number pulls your mean, corrupts your distributions, and misleads every statistical test downstream.</p>
+    <p>Cleaning is not about making data "look nice." It's about making your DataFrame <strong>speak the truth</strong>: correct dtypes, no phantom nulls disguised as strings, no duplicate rows from a bad JOIN.</p>
+    <div class="callout callout-w"><strong>Common mistake:</strong> Skipping cleaning "just to explore the data quickly." Exploration on unclean data produces misleading insights that become technical debt.</div>
+  </div>`;
+
+  const steps = `<div class="slabel">The 7-step sequence</div>
+  <div class="steps">
+    ${step(1,'Scale Classification','Check dataset size → choose standard, chunked, or Dask processing strategy')}
+    ${step(2,'Dataset Audit','Run all 5 quality dimensions before touching anything — understand what you have first')}
+    ${step(3,'Shape Classification','Identify if data is tall/wide/sparse/nested/time-series → choose loading strategy')}
+    ${step(4,'Load Data','Load with <span class="mono">dtype=str</span> and explicit <span class="mono">na_values</span> list — load clean, cast later')}
+    ${step(5,'Standardize Column Names','Normalize all names to <span class="mono">snake_case</span> — no spaces, no special characters, no numeric prefixes')}
+    ${step(6,'Remove Duplicates','Deduplicate on natural key (or all columns if none) — document your choice')}
+    ${step(7,'Fix Dtypes + Structural Corruption','Cast object columns to numeric/datetime/bool where &gt;80% parseable; replace all sentinel strings with NaN')}
+  </div>
+  <div class="callout callout-i" style="margin-top:1rem"><strong>The 80% rule:</strong> If more than 80% of values in a column look like numbers, convert the whole column to numeric. The remaining 20% become NaN, which imputation handles next.</div>`;
+
+  const taskContent = getTaskContent();
+
+  const concepts = `<div class="concept-grid">
+    ${concept('Sentinel Values',
+      'Placeholder values that represent "missing" but aren\'t technically null. Examples: -999, "N/A", "#REF!", "NULL", "not available".',
+      'Fix: Replace all known sentinels with proper NaN during loading.')}
+    ${concept('dtype coercion',
+      'Converting a column from one data type to another. A column loaded as <span class="mono">object</span> that is really numeric must be cast to <span class="mono">float64</span> for any math to work.',
+      'Check: Run df.dtypes — any unexpected object columns need investigation.')}
+    ${concept('snake_case',
+      'A naming convention where words are lowercase and separated by underscores: <span class="mono">customer_id</span>, <span class="mono">created_at</span>. Consistent naming prevents bugs in downstream code.',
+      'Rule: All column names must match <span class="mono">^[a-z][a-z0-9_]*$</span> after cleaning.')}
+    ${concept('Deduplication key',
+      'The column(s) that uniquely identify a row. If a natural key exists (order_id, customer_id), deduplicate on it — not all columns.',
+      'Warning: If >5% rows are duplicates, investigate the upstream JOIN before removing them.')}
+  </div>`;
+
+  const artifact = `<div class="slabel">Artifact produced</div>
+    <div class="artifact">
+      <div class="artifact-fn">cleaning_manifest.json</div>
+      <div class="artifact-code">${s.artifactCode}</div>
+    </div>
+    <div class="callout callout-s" style="margin-top:0.9rem">This manifest is consumed by every downstream stage. It documents original vs. final shape, all dtype changes, renamed columns, and encoding fixes — your audit trail.</div>`;
+
+  const gate = `<div class="callout callout-s" style="margin-top:2rem">
+    <strong>Quality bar before proceeding:</strong> dtypes reviewed ✓ · duplicates resolved ✓ · snake_case column names ✓ · sentinel strings eliminated ✓ · <span class="mono">cleaning_manifest.json</span> saved ✓
+  </div>`;
+
+  return stageShell(1, [
+    acc('s1-why', '💡', 'Why this stage matters', why, true),
+    acc('s1-steps', '📋', 'The 7-step cleaning sequence', steps),
+    acc('s1-task', '🎯', 'Your path-specific behavior', taskContent),
+    acc('s1-concepts', '📚', 'Key concepts', concepts),
+    acc('s1-artifact', '📄', 'What you produce', artifact)
+  ], gate);
+}
+
+// ═══════════════════════════════════════════════════════
+// SCREEN: STAGE 2 — DATA QUALITY ASSURANCE
+// ═══════════════════════════════════════════════════════
+function renderStage2() {
+  const s = STAGES[2];
+  const why = `<div class="prose">
+    <p>Bad data corrupts models silently. A model trained on data with 30% sentinel values in a key feature will learn the wrong signal, pass all unit tests, and only fail in production — often weeks after deployment when metrics drift.</p>
+    <p><strong>Quality gating forces a hard question:</strong> "Is this data safe to use?" before any irreversible step.</p>
+    <div class="callout callout-w">
+      <strong>The 3 failure modes QA prevents:</strong><br>
+      1. <strong>Garbage-in corruption</strong> — sentinel values, impossible ranges, and type inconsistencies produce nonsense features.<br>
+      2. <strong>Silent distribution shift</strong> — data from the wrong time period looks valid row-by-row but fails statistically.<br>
+      3. <strong>Incomplete coverage</strong> — missing rows mean the model never learned certain segments.
+    </div>
+  </div>`;
+
+  const dims = `<div class="slabel">The 5 quality dimensions (scored 0–100)</div>
+    <div class="dim-list">
+      ${dim('Completeness', 85, 'How much data is present? Null rates, missing columns, row counts vs. expected.')}
+      ${dim('Consistency', 78, 'Are values internally consistent? Duplicate keys, referential integrity, format uniformity.')}
+      ${dim('Accuracy', 92, 'Are values plausible? Range violations, impossible combinations, outliers vs. domain rules.')}
+      ${dim('Timeliness', 100, 'Is the data fresh? Max timestamp recency, gap detection, SLA compliance.')}
+      ${dim('Relevance', 65, 'Is this data useful for the task? Zero-variance columns, ID columns, irrelevant features.')}
+    </div>
+    <div class="callout callout-i" style="margin-top:0.9rem">A score ≥ 70 = PASS for that dimension. Scores 50–69 = DEGRADED (flag). Below 50 = FAIL.</div>`;
+
+  const activeV = state.qaVerdict || null;
+  const verdicts = `<div class="slabel">The verdict system — click to explore</div>
+    <div class="verdict-cards">
+      ${vcard('vpass', '✅', 'PASS', 'All 5 quality dimensions acceptable. No critical issues.',
+        ['Imputation', 'EDA', 'Feature Engineering'], [], activeV)}
+      ${vcard('vcond', '⚠️', 'CONDITIONAL_PASS', 'Critical issues exist but are documented and manageable.',
+        ['Imputation', 'EDA'], ['Feature Engineering (blocked until re-QA)'], activeV)}
+      ${vcard('vfail', '❌', 'FAIL', 'Data quality is insufficient for modeling. Fix issues first.',
+        [], ['Imputation', 'EDA', 'Feature Engineering'], activeV)}
+    </div>
+    <div id="verdict-detail" style="margin-top:0.9rem"></div>`;
+
+  const taskContent = getTaskContent();
+
+  const concepts = `<div class="concept-grid">
+    ${concept('PSI (Population Stability Index)',
+      'Measures how much a feature\'s distribution has shifted between time periods (e.g. training vs. production data).',
+      'Threshold: PSI < 0.1 = stable · 0.1–0.2 = monitor · > 0.2 = investigate, consider retraining.')}
+    ${concept('Data Drift',
+      'The patterns in your data are changing over time. Models degrade when production data differs from training data.',
+      'Fix: Monitor key features with KS-test or PSI. Retrain when drift exceeds thresholds.')}
+    ${concept('KS-test',
+      'Checks if two groups of numbers come from the same distribution. Used to detect if today\'s data differs from the baseline.',
+      'Rule: p > 0.05 = distributions similar. p < 0.05 = differ. On large datasets, always check effect size too.')}
+  </div>`;
+
+  const artifact = `<div class="slabel">Artifact produced</div>
+    <div class="artifact">
+      <div class="artifact-fn">qa_report.json</div>
+      <div class="artifact-code">${s.artifactCode}</div>
+    </div>
+    <div class="callout callout-s" style="margin-top:0.9rem">The <span class="mono">allowed_downstream_skills</span> field controls what happens next. Every downstream skill checks this field before proceeding.</div>`;
+
+  return stageShell(2, [
+    acc('s2-why', '💡', 'Why quality gating matters', why, true),
+    acc('s2-dims', '📊', 'The 5 quality dimensions', dims),
+    acc('s2-verdict', '🚦', 'The verdict system', verdicts),
+    acc('s2-task', '🎯', 'Your path-specific checks', taskContent),
+    acc('s2-concepts', '📚', 'Key concepts', concepts),
+    acc('s2-artifact', '📄', 'What you produce', artifact)
+  ], '');
+}
+
+function vcard(cls, icon, name, desc, allowed, blocked, active) {
+  const activeCls = active === cls ? 'vactive' : '';
+  const onclick = `selectVerdict('${cls}')`;
+  const al = allowed.map(a => `<div class="vi ok">✓ ${a}</div>`).join('');
+  const bl = blocked.map(b => `<div class="vi no">✗ ${b}</div>`).join('');
+  return `<div class="vcard ${cls} ${activeCls}" onclick="${onclick}">
+    <div class="vicon">${icon}</div>
+    <div class="vname">${name}</div>
+    <div class="vdesc">${desc}</div>
+    <div class="vlist">${al}${bl}</div>
+  </div>`;
+}
+
+function selectVerdict(v) {
+  state.qaVerdict = v;
+  document.querySelectorAll('.vcard').forEach(c => {
+    c.classList.remove('vactive');
+    if (c.classList.contains(v)) c.classList.add('vactive');
+  });
+  const detail = document.getElementById('verdict-detail');
+  if (!detail) return;
+  const msgs = {
+    vpass: '<div class="callout callout-s"><strong>PASS selected:</strong> All downstream stages are unlocked. Proceed to Missing Data Imputation.</div>',
+    vcond: '<div class="callout callout-w"><strong>CONDITIONAL_PASS selected:</strong> You may proceed to Imputation and EDA to characterize the issues. Feature Engineering is blocked until you fix the flagged problems and re-run QA with a PASS result.</div>',
+    vfail: '<div class="callout callout-d"><strong>FAIL selected:</strong> Do not proceed. Return to Data Cleaning and address the root cause. Typical actions: re-run cleaning with an extended sentinel list, fix the schema mismatch, or resolve the upstream data extraction issue.</div>'
+  };
+  detail.innerHTML = msgs[v] || '';
+}
+
+// ═══════════════════════════════════════════════════════
+// SCREEN: STAGE 3 — MISSING DATA IMPUTATION
+// ═══════════════════════════════════════════════════════
+function renderStage3() {
+  const s = STAGES[3];
+  const why = `<div class="prose">
+    <p>There are three ways naive imputation fails, and they all compound downstream:</p>
+    <div class="callout callout-d">
+      <strong>Mistake 1: Dropping rows</strong> — Only safe when data is truly random (MCAR) and loss is &lt;5%. Otherwise you systematically remove a subpopulation (e.g. all high-earners who skip the income question).<br><br>
+      <strong>Mistake 2: Mean/mode on the full dataset</strong> — This leaks test-set statistics into training. A model trained this way underperforms in production.<br><br>
+      <strong>Mistake 3: Ignoring MNAR</strong> — Imputing high-earners with median income pulls estimates toward the center. The missing value itself was the signal.
+    </div>
+    <p>The correct approach starts with <strong>diagnosing why data is missing</strong> before choosing a fill strategy.</p>
+  </div>`;
+
+  const mechanisms = `<div class="slabel">The three missingness mechanisms</div>
+    <div class="miss-cards">
+      <div class="mcard">
+        <div class="mtype" style="color:var(--green)">MCAR</div>
+        <div class="mplain">"coin flip" — completely random</div>
+        <div class="mwhat">Data is missing for no reason related to any column. Like a sensor dropout. The complete records are a random sample of all records.</div>
+        <div class="mwhat"><strong>Diagnostic:</strong> <span class="mono">df.isnull().corrwith(df[other_cols])</span> — correlations near zero across all columns.</div>
+        <div class="mfix">Strategy: median (numeric) or mode (categorical)</div>
+      </div>
+      <div class="mcard">
+        <div class="mtype" style="color:var(--amber)">MAR</div>
+        <div class="mplain">"caused by another column"</div>
+        <div class="mwhat">Missing for a reason related to <em>other visible columns</em>. Example: younger people less likely to report income — age predicts the missingness, not income itself.</div>
+        <div class="mwhat"><strong>Diagnostic:</strong> <span class="mono">df.isnull().corrwith(df[other_cols])</span> — high correlation with one or more observable columns.</div>
+        <div class="mfix">Strategy: KNNImputer or IterativeImputer (use other columns to predict)</div>
+      </div>
+      <div class="mcard">
+        <div class="mtype" style="color:var(--red)">MNAR</div>
+        <div class="mplain">"hides itself" — most dangerous</div>
+        <div class="mwhat">Missing because of the value itself. High earners skip the income field because they don't want to reveal high income. The missingness IS informative.</div>
+        <div class="mwhat"><strong>Diagnostic:</strong> Domain knowledge + checking if the null pattern aligns with known data collection behavior.</div>
+        <div class="mfix">Strategy: median/mode fill + create <span class="mono">col_was_missing</span> indicator</div>
+      </div>
+    </div>`;
+
+  const flowchart = `<div class="slabel">Decision flowchart</div>
+    <div class="flow-chart">
+      <div class="flow-row"><span class="flow-q">Is missingness correlated with any observable column?</span></div>
+      <div class="flow-branch">
+        <div class="flow-row"><span class="flow-y">YES →</span> <span class="flow-a">Is missingness correlated with the missing value itself (domain knowledge)?</span></div>
+        <div class="flow-branch">
+          <div class="flow-row"><span class="flow-y">YES →</span> <span style="color:var(--red);font-weight:600">MNAR</span> <span class="flow-a">→ Median fill + create <span class="mono">_was_missing</span> column</span></div>
+          <div class="flow-row"><span class="flow-n">NO  →</span> <span style="color:var(--amber);font-weight:600">MAR</span> <span class="flow-a">→ KNNImputer or IterativeImputer (fit on X_train only)</span></div>
+        </div>
+        <div class="flow-row"><span class="flow-n">NO  →</span> <span style="color:var(--green);font-weight:600">MCAR</span> <span class="flow-a">→ Median (numeric) or mode (categorical)</span></div>
+      </div>
+    </div>`;
+
+  const leakage = `<div class="prose">
+    <p>This stage has the highest leakage risk in the pipeline. The rule is absolute:</p>
+    <div class="callout callout-d"><strong>CRITICAL:</strong> Imputers must be <span class="mono">.fit()</span> on <span class="mono">X_train</span> only, then <span class="mono">.transform()</span> applied to both train and test. Never fit on the full dataset or on test data.</div>
+    <p>Why? If you use test-set statistics to fill training data, your model learns from information it wouldn't have in production. It's like studying the answer key before an exam — the results look great but don't generalize.</p>
+    <div class="checklist">
+      <div class="ci">Split data into X_train / X_test before any imputation</div>
+      <div class="ci">Call <span class="mono">imputer.fit(X_train[col])</span> — never <span class="mono">fit(df[col])</span></div>
+      <div class="ci">Call <span class="mono">imputer.transform(X_test[col])</span> — never refit on test</div>
+      <div class="ci">Save the fitted imputer objects for production use (<span class="mono">joblib.dump</span>)</div>
+    </div>
+  </div>`;
+
+  const taskContent = getTaskContent();
+
+  const concepts = `<div class="concept-grid">
+    ${concept('Data Leakage',
+      'Accidentally using information from the test set or the future during training. Your model "cheats" and fails in production.',
+      'Rule: ALWAYS fit transformers on training data only. Apply .transform() to test data.')}
+    ${concept('Train / Test Split',
+      'Dividing your data: 80% for building the model (train), 20% for evaluating it (test). Like practicing with some exam questions and being tested on others.',
+      'For time-series: use temporal split — train on past, test on future. Never random shuffle.')}
+    ${concept('KNNImputer',
+      'Fills missing values by finding the K most similar rows and averaging their values for the missing column. Uses all other columns to measure similarity.',
+      'Use for: MAR data. Slower than median — use on columns where other columns predict missingness.')}
+    ${concept('IterativeImputer',
+      'Models each feature with missing values as a function of other features. Iterates until convergence. More powerful than KNN for complex multivariate patterns.',
+      'Use for: MAR data with complex relationships. Fit on X_train only.')}
+  </div>`;
+
+  const artifact = `<div class="slabel">Artifact produced</div>
+    <div class="artifact">
+      <div class="artifact-fn">imputation_manifest.json</div>
+      <div class="artifact-code">${s.artifactCode}</div>
+    </div>`;
+
+  const gate = `<div class="callout callout-w" style="margin-top:2rem">
+    <strong>Leakage gate — confirm before proceeding:</strong> Imputers fit on X_train only ✓ · Fitted objects saved ✓ · _was_missing columns created for all MNAR columns ✓ · <span class="mono">imputation_manifest.json</span> saved ✓
+  </div>`;
+
+  return stageShell(3, [
+    acc('s3-why', '💡', 'Why naive imputation fails', why, true),
+    acc('s3-mech', '🔬', 'The three missingness mechanisms (MCAR / MAR / MNAR)', mechanisms),
+    acc('s3-flow', '🌿', 'Decision flowchart — which strategy to use', flowchart),
+    acc('s3-leak', '⚠️', 'The leakage danger — critical reading', leakage),
+    acc('s3-task', '🎯', 'Your path-specific rules', taskContent),
+    acc('s3-concepts', '📚', 'Key concepts', concepts),
+    acc('s3-artifact', '📄', 'What you produce', artifact)
+  ], gate);
+}
+
+// ═══════════════════════════════════════════════════════
+// SCREEN: STAGE 4 — EDA
+// ═══════════════════════════════════════════════════════
+function renderStage4() {
+  const s = STAGES[4];
+  const why = `<div class="prose">
+    <p>Skipping EDA produces garbage-in-garbage-out models. A model trained without EDA will:</p>
+    <div class="callout callout-d">
+      Fail silently on <strong>skewed targets</strong> that needed log transforms · Leak through <strong>high-correlation features</strong> that were never audited · Underperform because <strong>class imbalance</strong> was never detected · Break in production when <strong>distributions shift</strong> in ways that were never characterized
+    </div>
+    <p><strong>EDA is also the primary input to feature engineering.</strong> The <span class="mono">eda_findings.json</span> artifact is consumed directly by the next stage — it tells feature engineering which transforms to apply and which columns to promote.</p>
+  </div>`;
+
+  const what = `<div class="slabel">What EDA examines</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:0.75rem;margin-top:0.75rem">
+      ${eblock('📊','Distributions','Shape, skewness, outliers for every numeric column. Expected: know which columns need transforms before modeling.')}
+      ${eblock('🔗','Relationships','Correlations between features, and between features and the target. Spot redundancy (VIF) and potential leakage.')}
+      ${eblock('🎯','Target Analysis','How features relate to what you\'re predicting. The most important section for supervised tasks.')}
+      ${eblock('⏰','Temporal patterns','For time-series: trends, seasonality, stationarity. For all others: data recency and freshness.')}
+      ${eblock('🚨','Anomalies','Outlier detection, unexpected value distributions, subpopulation gaps that weren\'t caught in QA.')}
+      ${eblock('🧩','Missingness patterns','Are nulls random or structured? This refines imputation strategy choices from Stage 3.')}
+    </div>`;
+
+  const taskContent = getTaskContent();
+
+  const concepts = `<div class="concept-grid">
+    ${concept('Skewness',
+      'How lopsided a distribution is. Positive skew = long right tail (most values low, a few very high). Negative skew = long left tail.',
+      'Rule: |skew| > 1 → consider log1p transform. |skew| > 2 → strongly recommended.')}
+    ${concept('VIF (Variance Inflation Factor)',
+      'Measures how much a feature\'s variability is inflated by correlation with other features. High VIF = near-duplicate of others.',
+      'Rule: VIF > 10 → serious multicollinearity (consider dropping). VIF > 5 → moderate, investigate.')}
+    ${concept('Hopkins Statistic',
+      'Tests whether data has natural cluster structure or is just random noise. Only relevant for clustering tasks.',
+      'Rule: H > 0.7 → cluster structure exists. H ≈ 0.5 → data is random, clustering is meaningless.')}
+    ${concept('Kruskal-Wallis test',
+      'Checks if a numeric feature differs significantly across groups (classes). Works without assuming normal distribution.',
+      'Use for: classification tasks. p < 0.05 → feature differs across classes → potentially useful.')}
+    ${concept('ADF test',
+      'Augmented Dickey-Fuller: checks if a time-series has a stable average over time (is "stationary"). Required for most forecasting models.',
+      'Rule: p < 0.05 → stationary (good). p > 0.05 → not stationary → apply differencing.')}
+    ${concept('Cramer\'s V',
+      'Measures how strongly two categorical columns are related, on a scale from 0 (none) to 1 (perfect). Use after chi-squared.',
+      'Rule: V > 0.5 = strong · V > 0.3 = moderate · V < 0.1 = negligible.')}
+  </div>`;
+
+  const artifact = `<div class="slabel">Artifact produced</div>
+    <div class="artifact">
+      <div class="artifact-fn">eda_findings.json</div>
+      <div class="artifact-code">${s.artifactCode}</div>
+    </div>
+    <div class="callout callout-s" style="margin-top:0.9rem">The <span class="mono">recommended_transforms</span> and <span class="mono">feature_candidates</span> sections are consumed directly by Feature Engineering. EDA is where the two stages connect.</div>`;
+
+  const gate = `<div class="callout callout-s" style="margin-top:2rem">
+    <strong>Gate — confirm before proceeding:</strong> All transforms identified and in <span class="mono">recommended_transforms</span> ✓ · Feature candidates listed ✓ · Class imbalance documented ✓ · <span class="mono">eda_findings.json</span> saved ✓
+  </div>`;
+
+  return stageShell(4, [
+    acc('s4-why', '💡', 'Why EDA must come before modeling', why, true),
+    acc('s4-what', '🔬', 'What EDA examines', what),
+    acc('s4-task', '🎯', `Your path: ${state.task ? TASKS[state.task].name : 'task-specific'} analysis`, taskContent),
+    acc('s4-concepts', '📚', 'Key concepts & statistical tests', concepts),
+    acc('s4-artifact', '📄', 'What you produce', artifact)
+  ], gate);
+}
+
+function eblock(icon, title, desc) {
+  return `<div class="ccard"><div class="cterm" style="font-family:var(--font);font-size:0.85rem">${icon} ${title}</div><div class="cdef">${desc}</div></div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// SCREEN: STAGE 5 — FEATURE ENGINEERING
+// ═══════════════════════════════════════════════════════
+function renderStage5() {
+  const s = STAGES[5];
+  const why = `<div class="prose">
+    <p>Feature engineering is the highest-leverage activity in machine learning. A well-chosen feature set can turn a mediocre model into a strong one; a poor feature set guarantees a weak model regardless of how much you tune hyperparameters.</p>
+    <div class="callout callout-i">
+      This stage requires a <strong>PASS</strong> verdict from QA — not a CONDITIONAL_PASS. Known data quality issues produce unreliable features. If your QA verdict was CONDITIONAL_PASS, fix the issues and re-run QA first.
+    </div>
+    <p>Feature engineering is also the last place where data leakage can be introduced. All encoders, scalers, and imputers must be fitted on training data only.</p>
+  </div>`;
+
+  const encoding = `<div class="slabel">The encoding decision</div>
+    <div class="enc-grid">
+      <div class="ecard">
+        <div class="ename">One-Hot Encoding</div>
+        <div class="ewhen">Use when: categorical column has &lt;15 unique values. Creates one binary column per category. Standard for low-cardinality text categories.</div>
+        <div class="ewarn">Warning: Creates very wide matrices for high-cardinality columns (zip codes, product IDs).</div>
+      </div>
+      <div class="ecard">
+        <div class="ename">Target Encoding</div>
+        <div class="ewhen">Use when: categorical column has &gt;15 unique values. Replaces each category with the average target value for that category.</div>
+        <div class="ewarn">Warning: Must use fold-based cross-fitting to prevent leakage. Never compute on the full training set at once.</div>
+      </div>
+      <div class="ecard">
+        <div class="ename">log1p transform</div>
+        <div class="ewhen">Use when: numeric column has skewness &gt; 1 (right-skewed distribution). Compresses large values, stretches small ones.</div>
+        <div class="ewarn">Note: Use log1p (not log) to handle zero values. Apply to both train and test using the same transform.</div>
+      </div>
+      <div class="ecard">
+        <div class="ename">Cyclical sin/cos</div>
+        <div class="ewhen">Use when: numeric column represents a cycle — hour of day, day of week, month, compass bearing.</div>
+        <div class="ewarn">Why: Without this, a model thinks December (12) and January (1) are far apart, when they're adjacent.</div>
+      </div>
+      <div class="ecard">
+        <div class="ename">Hash Encoding</div>
+        <div class="ewhen">Use when: categorical column has extremely high cardinality (&gt;1000 values) and target encoding is too slow.</div>
+        <div class="ewarn">Tradeoff: Fast but introduces hash collisions (different categories may map to the same value).</div>
+      </div>
+      <div class="ecard">
+        <div class="ename">Polynomial Features</div>
+        <div class="ewhen">Use when: EDA showed clear non-linear relationships between features and target. Degree-2 only — higher degrees overfit quickly.</div>
+        <div class="ewarn">Warning: Combinatorial explosion. 10 features at degree 2 = 66 features. Be selective.</div>
+      </div>
+    </div>`;
+
+  const sulov = `<div class="slabel">SULOV + MRMR — automated feature selection (featurewiz)</div>
+    <div class="sulov">
+      <div class="sbox">
+        <div class="sbox-title">All Features</div>
+        <div class="sbox-desc">All engineered columns enter the selection pipeline</div>
+      </div>
+      <div class="sarrow">→</div>
+      <div class="sbox">
+        <div class="sbox-title">SULOV</div>
+        <div class="sbox-desc">Remove highly correlated pairs (default: r &gt; 0.7). Keeps the one with higher target correlation. Eliminates redundant copies.</div>
+      </div>
+      <div class="sarrow">→</div>
+      <div class="sbox">
+        <div class="sbox-title">MRMR</div>
+        <div class="sbox-desc">Rank remaining features by Maximum Relevance, Minimum Redundancy. Select the smallest set with highest predictive power.</div>
+      </div>
+      <div class="sarrow">→</div>
+      <div class="sbox">
+        <div class="sbox-title">Final Feature Set</div>
+        <div class="sbox-desc">Compact, non-redundant, highly relevant — ready for model training</div>
+      </div>
+    </div>
+    <div class="callout callout-i" style="margin-top:0.9rem"><strong>SULOV</strong> = Searching for Uncorrelated List of Variables. <strong>MRMR</strong> = Maximum Relevance Minimum Redundancy. Both run automatically when you call <span class="mono">featurewiz(df, target_col)</span>.</div>`;
+
+  const taskContent = getTaskContent();
+
+  const concepts = `<div class="concept-grid">
+    ${concept('SULOV',
+      'Removes features that are highly correlated with each other (redundant copies). If Feature A and Feature B move together 90% of the time, you only need one.',
+      'Config: corr_limit parameter (default 0.7). Lower = more aggressive removal.')}
+    ${concept('MRMR',
+      'After SULOV removes redundant features, MRMR ranks the remaining ones by predictive power while avoiding adding back redundancy.',
+      'Result: The smallest set of features with the most predictive power.')}
+    ${concept('Cross-Validation (CV)',
+      'Instead of one train/test split, do multiple splits and average results. Like taking 5 different exams instead of 1.',
+      'Use: 5-fold stratified CV for classification. Time-series split for temporal data. Never random CV for time-series.')}
+    ${concept('Feature Importance',
+      'A score showing how much each feature contributes to model predictions. High importance = this feature strongly influences the output.',
+      'Action: Check after training. Remove near-zero importance features to simplify the model.')}
+  </div>`;
+
+  const artifact = `<div class="slabel">Artifacts produced</div>
+    <div class="artifact">
+      <div class="artifact-fn">feature_manifest.json</div>
+      <div class="artifact-code">${s.artifactCode}</div>
+    </div>
+    <div class="callout callout-s" style="margin-top:0.9rem">The fitted pipeline (<span class="mono">.joblib</span> file) is what gets deployed to production. It transforms new data the same way — using only statistics learned from training.</div>`;
+
+  const gate = `<div class="callout callout-w" style="margin-top:2rem">
+    <strong>Final leakage checklist before model training:</strong>
+    <div class="checklist" style="margin-top:0.6rem">
+      <div class="ci">All encoders fitted on X_train only</div>
+      <div class="ci">Target encoding used fold-based cross-fitting (not full-dataset fit)</div>
+      <div class="ci">No feature was computed using test-set statistics</div>
+      <div class="ci">Temporal features (lags, rolling windows) only use past data at each prediction point</div>
+      <div class="ci">Feature pipeline saved to <span class="mono">.joblib</span> for reproducibility</div>
+    </div>
+  </div>
+  <div style="text-align:center;margin-top:2rem">
+    <button class="btn btn-primary btn-lg" onclick="goTo('complete')">Complete the pipeline →</button>
+  </div>`;
+
+  return stageShell(5, [
+    acc('s5-why', '💡', 'Why features matter more than models', why, true),
+    acc('s5-enc', '🔢', 'The encoding decision guide', encoding),
+    acc('s5-sulov', '⚙️', 'SULOV + MRMR automated selection', sulov),
+    acc('s5-task', '🎯', 'Your path-specific features', taskContent),
+    acc('s5-concepts', '📚', 'Key concepts', concepts),
+    acc('s5-artifact', '📄', 'What you produce', artifact)
+  ], gate);
+}
+
+// ═══════════════════════════════════════════════════════
+// SCREEN: COMPLETE
+// ═══════════════════════════════════════════════════════
+function renderComplete() {
+  const task = state.task ? TASKS[state.task] : null;
+  const chain = [
+    {icon:'📁', label:'Raw Data'},
+    {arrow:true},
+    {icon:'🧹', label:'cleaning_manifest.json'},
+    {arrow:true},
+    {icon:'📋', label:'qa_report.json'},
+    {arrow:true},
+    {icon:'🔍', label:'imputation_manifest.json'},
+    {arrow:true},
+    {icon:'🔭', label:'eda_findings.json'},
+    {arrow:true},
+    {icon:'⚙️', label:'feature_manifest.json'},
+    {arrow:true},
+    {icon:'🎓', label:'Model Training'},
+  ];
+
+  const chainHtml = chain.map(n => n.arrow
+    ? `<div class="cn-arrow">→</div>`
+    : `<div class="cn"><div class="cn-icon">${n.icon}</div><div class="cn-label">${n.label}</div></div>`
+  ).join('');
+
+  // Full glossary from glossary.md
+  const glossaryTerms = [
+    ['MCAR','Data is missing for no reason — like a coin flip. Simple median/mode fill works fine.'],
+    ['MAR','Data is missing due to another visible column. Use KNNImputer or IterativeImputer.'],
+    ['MNAR','Data is missing because of its own value. Fill + create a _was_missing indicator.'],
+    ['Data Leakage','Using future or test-set information during training. Your model cheats and fails in production.'],
+    ['Train/Test Split','80% train / 20% test. For time-series, always use temporal split (past → future).'],
+    ['Sentinel Values','Placeholder "missing" values masquerading as real data: -999, "N/A", "#REF!".'],
+    ['SULOV','Removes highly correlated (redundant) feature pairs. Lower corr_limit = more aggressive.'],
+    ['MRMR','Ranks features by Maximum Relevance, Minimum Redundancy after SULOV filtering.'],
+    ['One-Hot Encoding','Converts categories to binary columns. Best for < 15 unique values.'],
+    ['Target Encoding','Replaces category with average target value. Must use fold-based fitting to prevent leakage.'],
+    ['Cyclical Encoding','Encodes circular features (hour, month) with sin/cos pairs so adjacency is preserved.'],
+    ['PSI','Population Stability Index. Measures distribution shift. > 0.2 = investigate.'],
+    ['Data Drift','Production data patterns diverging from training data patterns over time.'],
+    ['Hopkins Statistic','Tests if data has cluster structure. H > 0.7 = proceed. H ≈ 0.5 = random, stop.'],
+    ['VIF','Variance Inflation Factor. > 10 = serious multicollinearity, consider dropping.'],
+    ['Skewness','Distribution lopsidedness. |skew| > 1 → try log1p transform.'],
+    ['KS-test','Kolmogorov-Smirnov: checks if two distributions are the same. p < 0.05 = differ.'],
+    ['Chi-squared test','Tests if two categorical variables are related. p < 0.05 = related.'],
+    ["Cramer's V",'Strength of categorical relationship, 0–1. > 0.5 = strong, > 0.3 = moderate.'],
+    ['Shapiro-Wilk','Tests if data follows a normal distribution. p < 0.05 = not normal.'],
+    ['ADF test','Augmented Dickey-Fuller: p < 0.05 = stationary (good for time-series).'],
+    ['Kruskal-Wallis','Tests if a numeric feature differs significantly across groups. p < 0.05 = useful feature.'],
+    ['Cross-Validation','Multiple train/test splits averaged together. More reliable than one split.'],
+    ['Feature Importance','Score of how much each feature influences model predictions.'],
+  ];
+
+  const glo = glossaryTerms.map(([term, def]) => concept(term, def, '')).join('');
+
+  return `<div class="completion">
+    <div style="font-size:3rem;margin-bottom:1rem">🎓</div>
+    <h2>Pipeline Complete${task ? ` — ${task.icon} ${task.name}` : ''}</h2>
+    <p style="color:var(--text-secondary);max-width:520px;margin:0 auto">Your data has traveled through every stage of the preparation pipeline. Here's the full artifact chain you've built.</p>
+    <div class="artifact-chain">${chainHtml}</div>
+    <div class="callout callout-s" style="max-width:600px;margin:0 auto;text-align:left">
+      <strong>What's next: Model Training</strong><br>
+      Load <span class="mono">X_train</span>, <span class="mono">y_train</span>, <span class="mono">X_test</span>, <span class="mono">y_test</span> from your feature pipeline. Choose your algorithm based on task type, dataset size, and interpretability requirements. The feature pipeline handles all transforms — your model trains on clean, leak-free, properly encoded data.
+    </div>
+    <div style="margin-top:3rem;text-align:left">
+      <h3 style="font-size:1.1rem;margin-bottom:0.25rem">Quick Reference Glossary</h3>
+      <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:1.25rem">All key terms from the pipeline — hover or bookmark for reference.</p>
+      <div class="glo-grid">${glo}</div>
+    </div>
+    <div style="margin-top:3rem;text-align:center">
+      <button class="btn" onclick="goTo('task-select')">← Choose a different task</button>
+      &nbsp;&nbsp;
+      <button class="btn btn-primary" onclick="goToStage(1)">Restart the pipeline</button>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════
+function step(n, title, desc) {
+  return `<div class="step"><div class="snum">${n}</div><div><strong>${title}</strong> — <span>${desc}</span></div></div>`;
+}
+
+function concept(term, def, action) {
+  return `<div class="ccard">
+    <div class="cterm">${term}</div>
+    <div class="cdef">${def}</div>
+    ${action ? `<div class="caction">→ ${action}</div>` : ''}
+  </div>`;
+}
+
+function dim(label, pct, desc) {
+  const color = pct >= 85 ? 'var(--green)' : pct >= 65 ? 'var(--amber)' : 'var(--red)';
+  return `<div class="dim-row">
+    <div class="dim-label">${label}</div>
+    <div class="dim-track"><div class="dim-bar" style="width:${pct}%;background:${color}"></div></div>
+    <div class="dim-desc">${desc}</div>
+  </div>`;
+}
+
+function stageShell(n, sections, extra) {
+  const s = STAGES[n];
+  const prev = n > 1 ? `<button class="btn" onclick="goToStage(${n-1})">← Stage ${n-1}: ${STAGES[n-1].shortTitle}</button>` : `<button class="btn" onclick="goTo('task-select')">← Choose task</button>`;
+  const next = n < 5
+    ? `<button class="btn btn-primary" onclick="goToStage(${n+1})">Stage ${n+1}: ${STAGES[n+1].shortTitle} →</button>`
+    : '';
+
+  const tags = s.tags.map(t => `<span class="tag tb">${t}</span>`).join(' ');
+
+  const taskNote = !state.task
+    ? `<div class="callout callout-i" style="margin-bottom:1.5rem">💡 <strong>Tip:</strong> <a href="#" onclick="goTo('task-select');return false" style="color:var(--blue)">Select a modeling task</a> to see path-specific guidance tailored to your work.</div>`
+    : '';
+
+  return `<div class="stage-header">
+    <div class="stage-num-circle">${s.icon}</div>
+    <div class="stage-meta">
+      <div style="font-size:0.72rem;color:var(--text-tertiary);font-weight:600;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.2rem">Stage ${n} of 5</div>
+      <h2>${s.title}</h2>
+      <div class="stage-goal">${s.goal}</div>
+      <div class="stage-tags" style="margin-top:0.4rem">${tags}</div>
+    </div>
+  </div>
+  ${taskNote}
+  ${sections.join('')}
+  ${extra}
+  <div class="stage-nav">
+    ${prev}
+    <div class="nav-center">Stage ${n} of 5</div>
+    ${next}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+// MAIN RENDER
+// ═══════════════════════════════════════════════════════
+function renderAll() {
+  renderSpine();
+  const app = document.getElementById('app');
+  const screen = state.screen;
+  if (screen === 'landing') app.innerHTML = renderLanding();
+  else if (screen === 'task-select') app.innerHTML = renderTaskSelect();
+  else if (screen === 'stage-1') app.innerHTML = renderStage1();
+  else if (screen === 'stage-2') app.innerHTML = renderStage2();
+  else if (screen === 'stage-3') app.innerHTML = renderStage3();
+  else if (screen === 'stage-4') app.innerHTML = renderStage4();
+  else if (screen === 'stage-5') app.innerHTML = renderStage5();
+  else if (screen === 'complete') app.innerHTML = renderComplete();
+}
+
+// Init
+renderAll();
+</script>
+</body>
+</html>
