@@ -1,0 +1,81 @@
+# requirements.txt — 4-Tier Dependency Manifest
+#
+# This is the canonical format for any requirements.txt in a skill library.
+# Reference: skill-blueprint/BLUEPRINT.md, Section 3 (Prerequisites) and Section 6 (Step 5)
+#
+# Copy this file to your domain library root and fill in each tier.
+# Individual skills add Tier 3 in their own requirements.txt if needed.
+# Tier 4 (infrastructure) is documented here but resolved in Dockerfile / conda env.
+#
+# --------------------------------------------------------------------------
+# TIER 1 — Domain Core
+# Required by ALL skills in this library. Installed once at the domain level.
+# Version pins are lower bounds (>=) unless a specific version is required (==).
+# --------------------------------------------------------------------------
+
+# {package}>={version}        # {reason: what capability it provides}
+# {package}>={version}
+
+# --------------------------------------------------------------------------
+# TIER 2 — Domain Optional (installed at library level, used by some skills)
+# These are loaded only when specific code paths are triggered.
+# Document the condition that requires each package.
+# --------------------------------------------------------------------------
+
+# {package}>={version}        # used when {condition — e.g., dataset > 1M rows}
+# {package}>={version}        # used when {condition — e.g., GPU training enabled}
+
+# --------------------------------------------------------------------------
+# TIER 3 — Skill-Specific
+# Packages required only by a single skill. List here for documentation,
+# but the authoritative location is that skill's own requirements.txt.
+# This tier is informational at the library level.
+# --------------------------------------------------------------------------
+
+# {package}>={version}        # skill: {skill-name} — {reason}
+# {package}>={version}        # skill: {skill-name} — {reason}
+
+# --------------------------------------------------------------------------
+# TIER 4 — Infrastructure (not pip-installable — resolved in environment)
+# System-level dependencies, GPU drivers, OS packages, base images.
+# Document here so environment builders know what is required.
+# These are NOT installed by `pip install -r requirements.txt`.
+# --------------------------------------------------------------------------
+
+# OS packages (install via apt/brew/yum as appropriate):
+#   {package}        # {reason — e.g., "libgomp1: required by LightGBM"}
+#
+# GPU / CUDA (if applicable):
+#   {driver-version} # {reason — e.g., "CUDA 12.x: required by PyTorch 2.x"}
+#   {library}        # {reason — e.g., "libcudnn 8.x: required for conv ops"}
+#
+# Base environment:
+#   Docker: {image}:{tag}          # e.g., "python:3.10-slim" or "pytorch/pytorch:2.1-cuda12.1"
+#   Conda: {env-file.yml}          # e.g., "environment.yml"
+#   Python version: >={version}    # minimum Python version
+
+# --------------------------------------------------------------------------
+# EXAMPLE — Data Science Domain (fill in as reference)
+# --------------------------------------------------------------------------
+#
+# TIER 1 — Domain Core
+# pandas>=2.0
+# numpy>=1.24
+# scikit-learn>=1.3
+# pyarrow>=14.0             # Parquet read/write for manifests and artifacts
+# python-dateutil>=2.8      # datetime parsing across all skills
+#
+# TIER 2 — Domain Optional
+# dask[dataframe]>=2024.1   # used when dataset scale == "large" or "very_large"
+# polars>=0.20              # used when dataset scale == "very_large" (faster CSV)
+#
+# TIER 3 — Skill-Specific
+# featurewiz>=0.3           # skill: feature-engineering — SULOV + MRMR selection
+# lightgbm>=4.0             # skill: feature-engineering — baseline validation
+# scipy>=1.11               # skill: data-quality-assurance — KS-test, chi-squared drift
+# statsmodels>=0.14         # skill: eda-comprehensive — ADF stationarity test
+#
+# TIER 4 — Infrastructure
+# OS packages: libgomp1 (required by LightGBM on Linux)
+# Base environment: python:3.10-slim
+# Python version: >=3.10
