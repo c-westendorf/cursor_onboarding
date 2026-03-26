@@ -1,0 +1,57 @@
+{
+  "//": "Pattern: Token Economics | Principle: P1 | Tool: Claude Code CLI / VS Code",
+  "//1": "Copy this to ~/.claude/settings.json and adjust values for your needs.",
+
+  "model": "claude-sonnet-4-5",
+
+  "env": {
+    "//": "Cap thinking tokens — reduces cost on reasoning-heavy tasks",
+    "MAX_THINKING_TOKENS": "10000",
+
+    "//1": "Start auto-compaction when context is 50% full (default: 80%)",
+    "//1_why": "Earlier compaction = smaller context summaries = cheaper follow-up turns",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "50"
+  },
+
+  "hooks": {
+    "//": "Register your hook scripts here. See examples/hooks/ for the scripts.",
+    "Stop": [
+      {
+        "//": "Runs when Claude finishes a session",
+        "command": "node ~/.claude/hooks/session-end.js"
+      }
+    ],
+    "SessionStart": [
+      {
+        "//": "Runs when Claude starts a new session",
+        "command": "node ~/.claude/hooks/session-start.js"
+      }
+    ],
+    "PreCompact": [
+      {
+        "//": "Runs before Claude compacts its context",
+        "command": "node ~/.claude/hooks/pre-compact.js"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "//": "Runs after Claude writes or edits a file",
+        "//1": "Exit code 2 blocks Claude from continuing until error is fixed",
+        "matcher": "Write|Edit",
+        "command": "bash ~/.claude/hooks/post-tool-verify.sh"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "//": "Runs before Claude sees each user message",
+        "//1": "Exit code 2 blocks the prompt — Claude never sees it",
+        "command": "node ~/.claude/hooks/secret-scan.js"
+      }
+    ]
+  },
+
+  "//model_routing": "Model routing strategy:",
+  "//model_routing1": "  Default: sonnet (fast, cheap, capable for most tasks)",
+  "//model_routing2": "  Workers: Add 'use haiku' to prompt for simple/repetitive subtasks",
+  "//model_routing3": "  Escalation: Add 'use opus' to prompt when first attempt fails or needs deep reasoning"
+}
