@@ -126,18 +126,17 @@ body { font-family: var(--sans); color: var(--text-1); -webkit-font-smoothing: a
 
 /* ── SLIDE HEADER ── */
 .slide-header {
-  display: flex; align-items: flex-start; gap: 18px;
+  display: flex; align-items: flex-start;
   margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); flex-shrink: 0;
 }
-.slide-num {
-  font-family: var(--mono); font-size: 10px; font-weight: 500;
-  color: var(--text-3); background: var(--surface2); border: 1px solid var(--border);
-  padding: 3px 8px; border-radius: 3px; margin-top: 6px; white-space: nowrap;
-}
+.slide-num { display: none; }
+.slide-header-text { order: 1; flex: 1; }
 .slide-principle-tag {
+  order: 2;
   font-family: var(--mono); font-size: 10px; font-weight: 500;
   letter-spacing: 0.06em; text-transform: uppercase;
   padding: 3px 8px; border-radius: 3px; margin-top: 6px; white-space: nowrap;
+  margin-left: auto; flex-shrink: 0;
 }
 .tag-p1  { background: #EBF1FA; color: #1B4D8E; border: 1px solid #B8CFED; }
 .tag-p2  { background: #E8F0F8; color: #2E6B9E; border: 1px solid #A8C8E8; }
@@ -2552,70 +2551,7 @@ claude --system-prompt "$(curl -s \
 </div>
 
 </div><!-- /deck -->
-
-<!-- FOOTER -->
-<div class="slide-footer">
-  <div class="footer-left">ACT 2 OF 3 · THE 9 PRINCIPLES</div>
-  <div class="footer-right" id="dots"></div>
-</div>
-
-<div class="keyboard-hint">
-  <div class="key">←</div>
-  <div class="key">→</div>
-</div>
-
-<script>
-const TOTAL = 18;
-let current = 1;
-
-const principleMap = {
-  1:'P1', 2:'P1 ↗', 3:'P2', 4:'P2 ↗', 5:'P3', 6:'P3 ↗',
-  7:'P4', 8:'P4 ↗', 9:'P5', 10:'P5 ↗', 11:'P6', 12:'P6 ↗',
-  13:'P7', 14:'P7 ↗', 15:'P8', 16:'P8 ↗', 17:'P9', 18:'P9 ↗'
-};
-
-function render() {
-  document.querySelectorAll('.slide').forEach((s,i) => {
-    s.classList.toggle('active', i+1 === current);
-  });
-  document.getElementById('counter').textContent = current + ' / ' + TOTAL;
-  document.getElementById('progress').style.width = (current/TOTAL*100) + '%';
-  document.getElementById('btn-prev').disabled = current === 1;
-  document.getElementById('btn-next').disabled = current === TOTAL;
-
-  const slide = document.getElementById('slide-' + current);
-  if (slide) {
-    document.getElementById('principle-badge').textContent = slide.dataset.principle || '';
-    document.getElementById('slide-title').textContent = slide.dataset.title || '';
-  }
-
-  const dots = document.getElementById('dots');
-  dots.innerHTML = '';
-  for (let i = 1; i <= TOTAL; i++) {
-    const d = document.createElement('div');
-    d.className = 'footer-dot' + (i === current ? ' active' : '');
-    dots.appendChild(d);
-  }
-}
-
-function go(dir) {
-  const next = current + dir;
-  if (next < 1 || next > TOTAL) return;
-  current = next;
-  render();
-}
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
-  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
-});
-
-render();
-</script>
-</body>
-</html>
-  </div>
-</div>
+</div><!-- /act-2 -->
 
 <!-- ACT 3: ACTIVATION -->
 <div id="act-3" class="act">
@@ -3040,86 +2976,7 @@ render();
 </div>
 
 </div><!-- /deck -->
-
-<div class="slide-footer">
-  <div class="footer-left">ACT 3 OF 3 · ACTIVATION</div>
-  <div class="footer-right" id="dots"></div>
-</div>
-
-<div class="keyboard-hint">
-  <div class="key">←</div>
-  <div class="key">→</div>
-</div>
-
-<script>
-const TOTAL = 3;
-let current = 1;
-
-function toggle(item) {
-  const box = item.querySelector('.check-box');
-  box.classList.toggle('checked');
-  updateProgress();
-}
-
-function updateProgress() {
-  const slide2 = document.getElementById('slide-2');
-  const phases = slide2.querySelectorAll('.checklist-phase');
-  
-  // Day 1 (phase 0)
-  const d1items = phases[0].querySelectorAll('.check-item');
-  const d1done = phases[0].querySelectorAll('.check-box.checked').length;
-  document.getElementById('d1-count').textContent = d1done + '/' + d1items.length;
-  document.getElementById('d1-bar').style.width = (d1done / d1items.length * 100) + '%';
-
-  // Week 1 (phase 1)
-  const w1items = phases[1].querySelectorAll('.check-item');
-  const w1done = phases[1].querySelectorAll('.check-box.checked').length;
-  document.getElementById('w1-count').textContent = w1done + '/' + w1items.length;
-  document.getElementById('w1-bar').style.width = (w1done / w1items.length * 100) + '%';
-
-  // Month 1 (phase 2)
-  const m1items = phases[2].querySelectorAll('.check-item');
-  const m1done = phases[2].querySelectorAll('.check-box.checked').length;
-  document.getElementById('m1-count').textContent = m1done + '/' + m1items.length;
-  document.getElementById('m1-bar').style.width = (m1done / m1items.length * 100) + '%';
-}
-
-function render() {
-  document.querySelectorAll('.slide').forEach((s,i) => {
-    s.classList.toggle('active', i+1 === current);
-  });
-  document.getElementById('counter').textContent = current + ' / ' + TOTAL;
-  document.getElementById('progress').style.width = (current/TOTAL*100) + '%';
-  document.getElementById('btn-prev').disabled = current === 1;
-  document.getElementById('btn-next').disabled = current === TOTAL;
-
-  const dots = document.getElementById('dots');
-  dots.innerHTML = '';
-  for (let i = 1; i <= TOTAL; i++) {
-    const d = document.createElement('div');
-    d.className = 'footer-dot' + (i === current ? ' active' : '');
-    dots.appendChild(d);
-  }
-}
-
-function go(dir) {
-  const next = current + dir;
-  if (next < 1 || next > TOTAL) return;
-  current = next;
-  render();
-}
-
-document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
-  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
-});
-
-render();
-</script>
-</body>
-</html>
-  </div>
-</div>
+</div><!-- /act-3 -->
 
 <!-- FOOTER -->
 <div class="slide-footer">
@@ -3204,7 +3061,7 @@ function renderAct() {
   document.getElementById('btn-prev').disabled = currentAct === 1 && slide === 1;
   document.getElementById('btn-next').disabled = currentAct === 3 && slide === total;
   document.getElementById('act-badge').textContent = 'ACT ' + act;
-  document.getElementById('footer-text').textContent = ACT_LABELS[act] + ' · AGENT HARNESS OPTIMIZATION';
+  document.getElementById('footer-text').textContent = ACT_LABELS[act] + ' · ' + slide + ' / ' + total;
 
   // Footer dots
   const dots = document.getElementById('dots');
@@ -3223,7 +3080,28 @@ document.addEventListener('keydown', e => {
 });
 
 // ── Act 3 checkboxes ───────────────────────────────────────────────────
-function toggle(el) { el.classList.toggle('checked'); }
+function toggle(el) {
+  el.classList.toggle('checked');
+  updateProgress();
+}
+
+function updateProgress() {
+  const act3deck = document.getElementById('deck-3');
+  if (!act3deck) return;
+  const phases = act3deck.querySelectorAll('.checklist-phase');
+  if (phases.length < 3) return;
+  const groups = [
+    { phase: phases[0], count: 'd1-count', bar: 'd1-bar' },
+    { phase: phases[1], count: 'w1-count', bar: 'w1-bar' },
+    { phase: phases[2], count: 'm1-count', bar: 'm1-bar' }
+  ];
+  groups.forEach(({ phase, count, bar }) => {
+    const total = phase.querySelectorAll('.check-item').length;
+    const done  = phase.querySelectorAll('.check-item.checked').length;
+    document.getElementById(count).textContent = done + '/' + total;
+    document.getElementById(bar).style.width = (done / total * 100) + '%';
+  });
+}
 
 // ── Init ───────────────────────────────────────────────────────────────
 renderAct();
