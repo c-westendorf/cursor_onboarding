@@ -1,0 +1,3233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agent Harness Optimization — All 3 Acts</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #F5F4F0;
+  --surface: #FFFFFF;
+  --surface2: #EEECEA;
+  --border: #DDDBD3;
+  --border-strong: #C4C1B8;
+  --text-1: #16150E;
+  --text-2: #58564E;
+  --text-3: #96948C;
+  --accent: #1B4D8E;
+  --accent-bg: #EBF1FA;
+  --accent-border: #B8CFED;
+  --green: #1A5C3A;
+  --green-bg: #E8F3EC;
+  --green-border: #A8D4B8;
+  --amber: #7A4800;
+  --amber-bg: #FDF3E3;
+  --amber-border: #E8C98A;
+  --code-bg: #14130E;
+  --code-surface: #1E1D18;
+  --code-border: #2E2C26;
+  --code-text: #E2DFD8;
+  --code-comment: #6A685E;
+  --code-key: #89B4E8;
+  --code-str: #A8C88A;
+  --code-num: #D4A96A;
+  --code-fn: #C8A86A;
+  --code-kw: #CF8E6D;
+  --sans: 'IBM Plex Sans', sans-serif;
+  --serif: 'Lora', serif;
+  --mono: 'IBM Plex Mono', monospace;
+}
+
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+body { font-family: var(--sans); color: var(--text-1); -webkit-font-smoothing: antialiased; }
+
+/* ── ACT CONTAINERS ── */
+.act { display: none; width: 100%; height: 100%; }
+.act.active { display: block; }
+
+/* ── NAV ── */
+#nav {
+  position: fixed; top: 0; left: 0; right: 0; height: 52px;
+  background: rgba(245,244,240,0.95); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 32px; z-index: 100;
+}
+.nav-left { display: flex; align-items: center; gap: 10px; }
+.nav-act-badge {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  background: var(--accent); color: white; padding: 3px 8px; border-radius: 3px;
+}
+.act-tabs { display: flex; gap: 4px; }
+.act-tab {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 4px 10px; border: 1px solid var(--border); border-radius: 4px;
+  background: var(--surface); color: var(--text-2); cursor: pointer; transition: all 0.12s;
+}
+.act-tab:hover { background: var(--surface2); }
+.act-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+.nav-principle-badge {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  background: var(--surface2); color: var(--text-3);
+  border: 1px solid var(--border); padding: 3px 8px; border-radius: 3px; transition: all 0.2s;
+}
+.nav-tool-toggle {
+  display: flex; gap: 4px;
+  margin-left: 12px; padding-left: 12px;
+  border-left: 1px solid var(--border);
+}
+.nav-right { display: flex; align-items: center; gap: 14px; }
+.nav-counter { font-family: var(--mono); font-size: 11px; color: var(--text-3); }
+.nav-btn {
+  width: 30px; height: 30px; border: 1px solid var(--border-strong);
+  border-radius: 5px; background: var(--surface); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-2); font-size: 13px; transition: all 0.12s; user-select: none;
+}
+.nav-btn:hover { background: var(--text-1); color: white; border-color: var(--text-1); }
+.nav-btn:disabled { opacity: 0.3; cursor: default; }
+.nav-btn:disabled:hover { background: var(--surface); color: var(--text-2); border-color: var(--border-strong); }
+
+/* ── PROGRESS ── */
+#progress {
+  position: fixed; top: 52px; left: 0; height: 2px;
+  background: var(--accent); transition: width 0.35s cubic-bezier(0.4,0,0.2,1); z-index: 99;
+}
+
+/* ── TOOL SELECTOR ── */
+.tool-btn {
+  font-family: var(--mono); font-size: 11px; padding: 6px 14px;
+  border: 1px solid var(--border-strong); border-radius: 5px;
+  background: var(--surface); color: var(--text-2); cursor: pointer; transition: all 0.12s;
+}
+.tool-btn:hover { background: var(--surface2); }
+.tool-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+.vscode-note {
+  font-size: 11px; color: var(--text-2); background: var(--surface2);
+  border: 1px solid var(--border); border-radius: 4px; padding: 8px 10px; margin-top: 6px;
+}
+
+/* ── DECK / SLIDES ── */
+.deck { position: fixed; top: 52px; left: 0; right: 0; bottom: 36px; overflow: hidden; }
+.slide { position: absolute; inset: 0; display: none; padding: 44px 72px 32px; overflow-y: auto; }
+.slide.active { display: flex; flex-direction: column; animation: slideIn 0.25s cubic-bezier(0.4,0,0.2,1); }
+@keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+/* Act 1 cover needs more padding */
+.slide-cover { justify-content: center; max-width: 900px; margin: 0 auto; padding-top: 56px; }
+
+/* ── SLIDE HEADER ── */
+.slide-header {
+  display: flex; align-items: flex-start; gap: 18px;
+  margin-bottom: 32px; padding-bottom: 24px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.slide-num {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  color: var(--text-3); background: var(--surface2); border: 1px solid var(--border);
+  padding: 3px 8px; border-radius: 3px; margin-top: 6px; white-space: nowrap;
+}
+.slide-principle-tag {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 3px; margin-top: 6px; white-space: nowrap;
+}
+.tag-p1  { background: #EBF1FA; color: #1B4D8E; border: 1px solid #B8CFED; }
+.tag-p2  { background: #E8F0F8; color: #2E6B9E; border: 1px solid #A8C8E8; }
+.tag-p3  { background: #F0EAF5; color: #6B3A8E; border: 1px solid #C8A8E8; }
+.tag-p4  { background: #E8F3EC; color: #1A5C3A; border: 1px solid #A8D4B8; }
+.tag-p5  { background: #FDF3E3; color: #7A4800; border: 1px solid #E8C98A; }
+.tag-p6  { background: #FDEAEA; color: #8B1A1A; border: 1px solid #E8B4B4; }
+.tag-p7  { background: #F0EEF8; color: #3D2B7A; border: 1px solid #B8AEDE; }
+.tag-p8  { background: #E8F5EE; color: #1A6B4A; border: 1px solid #90D4B0; }
+.tag-p9  { background: #FDF0E8; color: #8B4A1A; border: 1px solid #E8C0A0; }
+.tag-deep { background: var(--code-surface); color: #89B4E8; border: 1px solid var(--code-border); }
+.slide-header-text h2 {
+  font-family: var(--serif); font-size: 32px; font-weight: 400;
+  line-height: 1.2; letter-spacing: -0.01em; margin-bottom: 5px;
+}
+.slide-header-text .tagline { font-size: 14px; color: var(--text-2); font-style: italic; }
+
+/* ── LAYOUT ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; flex: 1; }
+.col-6040 { display: grid; grid-template-columns: 1.35fr 1fr; gap: 24px; flex: 1; }
+.col-4060 { display: grid; grid-template-columns: 1fr 1.35fr; gap: 24px; flex: 1; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; flex: 1; }
+.full-col { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+.slide-content { max-width: 960px; margin: 0 auto; width: 100%; }
+
+/* ── CARDS ── */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 20px; }
+.card-label {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); margin-bottom: 10px;
+}
+.card h3 { font-family: var(--serif); font-size: 17px; font-weight: 500; margin-bottom: 8px; line-height: 1.35; }
+.card p { font-size: 13px; line-height: 1.75; color: var(--text-2); }
+.card.accent { border-color: var(--accent-border); background: var(--accent-bg); }
+.card.accent .card-label { color: var(--accent); }
+.card.green { border-color: var(--green-border); background: var(--green-bg); }
+.card.green .card-label { color: var(--green); }
+.card.amber { border-color: var(--amber-border); background: var(--amber-bg); }
+.card.amber .card-label { color: var(--amber); }
+
+/* ── CTA BOX ── */
+.cta-box {
+  background: var(--green-bg); border: 1.5px solid var(--green-border);
+  border-radius: 9px; padding: 20px 24px; display: flex; gap: 16px; align-items: flex-start; flex-shrink: 0;
+}
+.cta-icon { font-size: 18px; line-height: 1; margin-top: 2px; flex-shrink: 0; }
+.cta-label {
+  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--green); margin-bottom: 4px;
+}
+.cta-title { font-size: 14px; font-weight: 600; color: var(--text-1); margin-bottom: 6px; }
+.cta-steps { font-size: 12px; color: var(--text-2); line-height: 1.85; list-style: none; padding: 0; }
+.cta-steps li::before { content: "→ "; color: var(--green); font-weight: 600; }
+
+/* ── COVER ELEMENTS ── */
+.cover-eyebrow { display: flex; align-items: center; gap: 10px; margin-bottom: 40px; }
+.cover-eyebrow-line { width: 28px; height: 1px; background: var(--text-3); }
+.cover-eyebrow-text {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text-3);
+}
+.cover-title {
+  font-family: var(--serif); font-size: 62px; font-weight: 400;
+  line-height: 1.1; letter-spacing: -0.02em; margin-bottom: 8px;
+}
+.cover-title em { font-style: italic; color: var(--accent); }
+.cover-subtitle { font-size: 20px; font-weight: 300; color: var(--text-2); margin-bottom: 32px; line-height: 1.5; max-width: 600px; }
+.cover-meta { display: flex; gap: 0; border-top: 1px solid var(--border); padding-top: 32px; }
+.cover-meta-item { padding-right: 40px; margin-right: 40px; border-right: 1px solid var(--border); }
+.cover-meta-item:last-child { border-right: none; margin-right: 0; }
+.cover-meta-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); margin-bottom: 4px; }
+.cover-meta-value { font-size: 14px; color: var(--text-2); font-weight: 400; }
+.act-nav { display: flex; gap: 12px; margin-top: 24px; }
+.act-pill {
+  font-family: var(--mono); font-size: 11px; padding: 6px 14px;
+  border-radius: 20px; border: 1px solid var(--border-strong); color: var(--text-2); background: var(--surface);
+}
+.act-pill.current { background: var(--accent); color: white; border-color: var(--accent); }
+
+/* ── PROBLEM LIST ── */
+.problem-item { display: flex; gap: 16px; padding: 18px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+.problem-item:last-child { border-bottom: none; }
+.problem-num { font-family: var(--mono); font-size: 11px; color: var(--text-3); font-weight: 500; width: 24px; flex-shrink: 0; margin-top: 2px; }
+.problem-text h4 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+.problem-text p { font-size: 13px; color: var(--text-2); line-height: 1.65; }
+.problem-tag { margin-left: auto; font-family: var(--mono); font-size: 10px; padding: 3px 8px; border-radius: 3px; flex-shrink: 0; margin-top: 2px; }
+.tag-red { background: #FDEAEA; color: #8B1A1A; border: 1px solid #E8B4B4; }
+.tag-amber { background: var(--amber-bg); color: var(--amber); border: 1px solid #E8C98A; }
+
+/* ── SYSTEM DIAGRAM ── */
+.system-diagram { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 32px; display: flex; flex-direction: column; align-items: center; }
+.sys-layer { width: 100%; max-width: 520px; display: flex; flex-direction: column; align-items: center; }
+.sys-box { width: 100%; padding: 14px 20px; border-radius: 7px; text-align: center; border: 1px solid var(--border); }
+.sys-box-label { font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
+.sys-box-name { font-size: 15px; font-weight: 600; }
+.sys-box-sub { font-size: 12px; color: var(--text-2); margin-top: 2px; }
+.sys-arrow { font-size: 18px; color: var(--text-3); margin: 6px 0; }
+.sys-box.model-box { background: var(--surface2); border-color: var(--border-strong); }
+.sys-box.harness-box { background: var(--accent-bg); border-color: var(--accent-border); }
+.sys-box.harness-box .sys-box-label { color: var(--accent); }
+.sys-box.you-box { background: var(--green-bg); border-color: var(--green-border); }
+.sys-box.you-box .sys-box-label { color: var(--green); }
+
+/* ── PRINCIPLES GRID ── */
+.principles-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.principle-chip { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; display: flex; gap: 12px; align-items: flex-start; }
+.principle-chip-num { font-family: var(--mono); font-size: 10px; font-weight: 500; color: var(--text-3); background: var(--surface2); border: 1px solid var(--border); padding: 3px 7px; border-radius: 3px; flex-shrink: 0; margin-top: 1px; }
+.principle-chip-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.principle-chip-desc { font-size: 11px; color: var(--text-2); line-height: 1.5; }
+.principle-chip:nth-child(1) { border-left: 3px solid var(--accent); }
+.principle-chip:nth-child(2) { border-left: 3px solid #2E86AB; }
+.principle-chip:nth-child(3) { border-left: 3px solid #A23B72; }
+.principle-chip:nth-child(4) { border-left: 3px solid var(--green); }
+.principle-chip:nth-child(5) { border-left: 3px solid #F18F01; }
+.principle-chip:nth-child(6) { border-left: 3px solid #C73E1D; }
+.principle-chip:nth-child(7) { border-left: 3px solid #5C4B8A; }
+.principle-chip:nth-child(8) { border-left: 3px solid #2D6A4F; }
+.principle-chip:nth-child(9) { border-left: 3px solid #E9724C; }
+
+/* ── COMPOUND CHART ── */
+.compound-chart { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 28px; }
+.compound-bars { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.compound-row { display: flex; align-items: center; gap: 12px; }
+.compound-label { font-size: 12px; color: var(--text-2); width: 60px; flex-shrink: 0; text-align: right; }
+.compound-bar-track { flex: 1; height: 28px; background: var(--surface2); border-radius: 4px; overflow: hidden; }
+.compound-bar { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 10px; font-size: 11px; font-weight: 600; color: white; font-family: var(--mono); }
+.bar-model { background: var(--border-strong); color: var(--text-2); }
+.bar-harness { background: var(--accent); }
+.bar-total { background: var(--green); }
+.compound-note { font-size: 12px; color: var(--text-3); font-style: italic; text-align: center; border-top: 1px solid var(--border); padding-top: 14px; }
+
+/* ── QUOTE ── */
+.quote-block { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 20px 24px; }
+.quote-text { font-family: var(--serif); font-size: 17px; line-height: 1.65; font-style: italic; margin-bottom: 10px; }
+.quote-attr { font-family: var(--mono); font-size: 11px; color: var(--text-3); }
+
+/* ── MODEL TABLE ── */
+.model-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.model-table th { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.model-table td { padding: 9px 12px; border-bottom: 1px solid var(--border); color: var(--text-2); vertical-align: top; }
+.model-table tr:last-child td { border-bottom: none; }
+.model-badge { font-family: var(--mono); font-size: 10px; font-weight: 500; padding: 2px 7px; border-radius: 3px; display: inline-block; }
+.badge-haiku  { background: #E8F3EC; color: #1A5C3A; border: 1px solid #A8D4B8; }
+.badge-sonnet { background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-border); }
+.badge-opus   { background: #F0EEF8; color: #3D2B7A; border: 1px solid #B8AEDE; }
+
+/* ── CODE BLOCKS ── */
+.code-block { background: var(--code-bg); border-radius: 8px; overflow: hidden; font-family: var(--mono); font-size: 12px; line-height: 1.7; flex: 1; }
+.code-header { background: var(--code-surface); padding: 8px 14px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--code-border); }
+.dots { display: flex; gap: 5px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; }
+.dot-r { background: #FF5F56; } .dot-y { background: #FFBD2E; } .dot-g { background: #27C93F; }
+.filename { font-size: 10px; color: var(--code-comment); }
+.code-block pre { padding: 14px 18px; overflow-x: auto; color: var(--code-text); white-space: pre; margin: 0; }
+.ck  { color: var(--code-key); }
+.cs  { color: var(--code-str); }
+.cn  { color: var(--code-num); }
+.cf  { color: var(--code-fn); }
+.cc  { color: var(--code-comment); font-style: italic; }
+.ckw { color: var(--code-kw); }
+
+/* ── PIPELINE ── */
+.pipeline { display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+.pipeline-phase { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; gap: 14px; align-items: flex-start; }
+.pipeline-phase:last-child { border-bottom: none; }
+.phase-num { font-family: var(--mono); font-size: 10px; font-weight: 500; background: var(--surface2); border: 1px solid var(--border); padding: 3px 7px; border-radius: 3px; color: var(--text-3); flex-shrink: 0; margin-top: 1px; }
+.phase-name { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.phase-desc { font-size: 12px; color: var(--text-2); line-height: 1.5; }
+.phase-output { margin-left: auto; font-family: var(--mono); font-size: 10px; color: var(--text-3); background: var(--surface2); border: 1px solid var(--border); padding: 2px 7px; border-radius: 3px; flex-shrink: 0; white-space: nowrap; }
+
+/* ── HOOK FLOW ── */
+.hook-flow { display: flex; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+.hook-step { flex: 1; padding: 16px 14px; text-align: center; border-right: 1px solid var(--border); }
+.hook-step:last-child { border-right: none; }
+.hook-step-icon { font-size: 18px; margin-bottom: 6px; }
+.hook-step-name { font-family: var(--mono); font-size: 10px; font-weight: 500; color: var(--text-3); margin-bottom: 4px; letter-spacing: 0.05em; }
+.hook-step-desc { font-size: 11px; color: var(--text-2); line-height: 1.4; }
+
+/* ── METRIC CARDS ── */
+.metric-card { background: var(--surface); border: 1px solid var(--border); border-radius: 9px; padding: 18px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; }
+.metric-value { font-family: var(--serif); font-size: 36px; font-weight: 400; line-height: 1; }
+.metric-label { font-family: var(--mono); font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; }
+.metric-sub { font-size: 12px; color: var(--text-2); }
+
+/* ── PASS-K TABLE ── */
+.passk-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.passk-table th { font-family: var(--mono); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-3); padding: 7px 12px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.passk-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); color: var(--text-2); }
+.passk-table tr:last-child td { border-bottom: none; }
+.passk-val { font-family: var(--mono); font-weight: 500; }
+.passk-high { color: var(--green); }
+.passk-low  { color: #8B1A1A; }
+
+/* ── LIST ITEMS ── */
+.list-item { display: flex; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+.list-item:last-child { border-bottom: none; }
+.list-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; margin-top: 5px; }
+.list-text h4 { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.list-text p { font-size: 12px; color: var(--text-2); line-height: 1.55; }
+
+/* ── ACT 3: TIER CARDS ── */
+.tier-card { background: var(--surface); border: 1px solid var(--border); border-radius: 9px; overflow: hidden; }
+.tier-header { padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+.tier-badge { font-family: var(--mono); font-size: 10px; font-weight: 500; padding: 3px 8px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; }
+.tier-1-badge { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.tier-2-badge { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+.tier-header-text h3 { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.tier-header-text p { font-size: 12px; color: var(--text-2); }
+.tier-body { padding: 10px 18px; }
+.tier-item { display: flex; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+.tier-item:last-child { border-bottom: none; }
+.tier-item-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.tier-1-dot { background: var(--green); }
+.tier-2-dot { background: var(--amber); }
+.tier-item-text h4 { font-size: 13px; font-weight: 600; margin-bottom: 2px; }
+.tier-item-text p { font-size: 12px; color: var(--text-2); line-height: 1.55; }
+
+/* ── ACT 3: CHECKLIST ── */
+.checklist-phase { margin-bottom: 20px; }
+.phase-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+.phase-badge { font-family: var(--mono); font-size: 10px; font-weight: 500; padding: 3px 10px; border-radius: 3px; white-space: nowrap; }
+.phase-d1 { background: var(--accent-bg); color: var(--accent); border: 1px solid var(--accent-border); }
+.phase-w1 { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.phase-m1 { background: var(--surface2); color: var(--text-2); border: 1px solid var(--border); }
+.phase-title { font-size: 14px; font-weight: 600; }
+.phase-sub { font-size: 12px; color: var(--text-3); margin-left: auto; font-family: var(--mono); }
+.check-item {
+  display: flex; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--border);
+  cursor: pointer; align-items: flex-start; transition: opacity 0.2s;
+}
+.check-item:last-child { border-bottom: none; }
+.check-item.checked { opacity: 0.45; }
+.check-box {
+  width: 16px; height: 16px; border: 1.5px solid var(--border-strong); border-radius: 3px;
+  flex-shrink: 0; margin-top: 2px; transition: all 0.15s; background: var(--surface);
+}
+.check-item.checked .check-box { background: var(--green); border-color: var(--green); }
+.check-item.checked .check-box::after { content: "✓"; font-size: 10px; font-weight: 700; color: white; display: flex; align-items: center; justify-content: center; height: 100%; }
+.check-body { flex: 1; }
+.check-title { font-size: 13px; font-weight: 600; color: var(--text-1); margin-bottom: 2px; }
+.check-cmd { font-family: var(--mono); font-size: 11px; color: var(--text-3); background: var(--surface2); padding: 2px 6px; border-radius: 3px; display: inline-block; margin-top: 2px; }
+.check-note { font-size: 11px; color: var(--text-2); margin-top: 3px; line-height: 1.5; }
+.check-p-tag { display: none; }
+
+/* ── ACT 3: PRINCIPLE RECAP ── */
+.recap-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.recap-item { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
+.recap-num { font-family: var(--mono); font-size: 9px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 5px; }
+.recap-name { font-size: 12px; font-weight: 600; color: var(--text-1); margin-bottom: 4px; }
+.recap-action { font-size: 11px; color: var(--text-2); line-height: 1.45; }
+
+/* ── ACT 3: CLOSE TITLE ── */
+.close-title {
+  font-family: var(--serif); font-size: 48px; font-weight: 400;
+  line-height: 1.1; letter-spacing: -0.02em;
+}
+.close-title em { font-style: italic; color: var(--green); }
+
+/* ── FOOTER ── */
+.slide-footer {
+  position: fixed; bottom: 0; left: 0; right: 0; height: 36px;
+  background: var(--bg); border-top: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 48px; justify-content: space-between;
+}
+.footer-left { font-family: var(--mono); font-size: 10px; color: var(--text-3); letter-spacing: 0.05em; }
+.footer-right { display: flex; gap: 4px; }
+.footer-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--border-strong); transition: background 0.2s; }
+.footer-dot.active { background: var(--accent); }
+
+/* ── KEYBOARD HINT ── */
+.keyboard-hint { position: fixed; bottom: 44px; right: 48px; display: flex; gap: 6px; align-items: center; opacity: 0.45; }
+.key { font-family: var(--mono); font-size: 10px; padding: 2px 7px; border: 1px solid var(--border-strong); border-radius: 3px; background: var(--surface); color: var(--text-2); }
+.key-label { font-size: 11px; color: var(--text-3); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div id="nav">
+  <div class="nav-left">
+    <span class="nav-act-badge" id="act-badge">ACT 1</span>
+    <div class="act-tabs">
+      <button class="act-tab active" data-act="1" onclick="switchAct(1)">Foundation</button>
+      <button class="act-tab" data-act="2" onclick="switchAct(2)">Principles</button>
+      <button class="act-tab" data-act="3" onclick="switchAct(3)">Activation</button>
+    </div>
+    <div class="nav-tool-toggle">
+      <button class="tool-btn active" id="btn-cli" onclick="setTool('cli')">Claude Code CLI</button>
+      <button class="tool-btn" id="btn-vscode" onclick="setTool('vscode')">VS Code</button>
+    </div>
+  </div>
+  <div class="nav-right">
+    <span class="nav-counter" id="counter">1 / 4</span>
+    <button class="nav-btn" id="btn-prev" onclick="go(-1)" disabled>←</button>
+    <button class="nav-btn" id="btn-next" onclick="go(1)">→</button>
+  </div>
+</div>
+
+<div id="progress"></div>
+
+<!-- ACT 1: FOUNDATION -->
+<div id="act-1" class="act active">
+  <div id="deck-1" class="deck">
+<!-- ═══ SLIDE 1: COVER ═══ -->
+  <div class="slide slide-cover active" id="slide-1">
+    <div class="cover-eyebrow">
+      <div class="cover-eyebrow-line"></div>
+      <div class="cover-eyebrow-text">A Practitioner's Field Guide · Built from 10 months of daily production use</div>
+    </div>
+    <h1 class="cover-title">Agent Harness<br><em>Optimization</em></h1>
+    <p class="cover-subtitle">The system around the model determines 80% of your outcomes. This is how to build it.</p>
+
+    <div class="act-nav">
+      <div class="act-pill current" onclick="switchAct(1)" style="cursor:pointer;">Act 1 — Foundation</div>
+      <div class="act-pill" onclick="switchAct(2)" style="cursor:pointer;">Act 2 — 9 Principles</div>
+      <div class="act-pill" onclick="switchAct(3)" style="cursor:pointer;">Act 3 — Activation</div>
+    </div>
+
+    <div class="cover-meta" style="margin-top: 48px;">
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Source</div>
+        <div class="cover-meta-value">everything-claude-code</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Audience</div>
+        <div class="cover-meta-value">Data Scientists & ML Engineers</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Approach</div>
+        <div class="cover-meta-value">Action-first — do while you read</div>
+      </div>
+      <div class="cover-meta-item">
+        <div class="cover-meta-label">Works with</div>
+        <div class="cover-meta-value">Claude Code, Cursor, Codex, OpenCode</div>
+      </div>
+    </div>
+
+    <div class="companion-repo-link" style="margin-top:32px;padding:14px 18px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:8px;max-width:680px;">
+      <span style="font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--accent);">Companion Examples</span>
+      <div style="margin-top:4px;font-size:13px;color:var(--text-2);">Pattern reference library: <a href="https://github.com/c-westendorf/cursor_onboarding/tree/main/010-harness-patterns" style="color:var(--accent);text-decoration:none;font-weight:500;">https://github.com/c-westendorf/cursor_onboarding/tree/main/010-harness-patterns</a></div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--text-3);margin-top:6px;">git clone https://github.com/c-westendorf/cursor_onboarding &amp;&amp; cd ~/cursor_onboarding/010-harness-patterns</div>
+    </div>
+
+    <div style="margin-top:16px;max-width:680px;font-family:var(--mono);font-size:11px;color:var(--text-3);">
+      Select your tool in the top nav bar — CTAs on every slide adapt accordingly.
+    </div>
+
+    <div class="cta-box" style="margin-top: 20px; max-width: 680px;">
+      <div class="cta-icon">⚡</div>
+      <div class="cta-content">
+        <div class="cta-label">Before you start</div>
+        <div class="cta-title">Have your terminal open alongside this presentation</div>
+        <ul class="cta-steps">
+          <li>Every slide has a "Do This Now" action you can run immediately</li>
+          <li>Each action takes under 5 minutes — do them as you go</li>
+          <li>By the end of Act 3 your harness will be fully set up</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SLIDE 2: THE PROBLEM ═══ -->
+  <div class="slide slide-content" id="slide-2">
+    <div class="slide-header">
+      <div class="slide-num">01 / 04</div>
+      <div class="slide-header-text">
+        <h2>Why Most Agent Sessions Fail</h2>
+        <div class="tagline">The problems degrade productivity before you notice them.</div>
+      </div>
+    </div>
+
+    <div class="col-6040">
+      <div>
+        <div class="problem-item">
+          <div class="problem-num">01</div>
+          <div class="problem-text">
+            <h4>Context Rot</h4>
+            <p>With 200k token windows, agents forget earlier decisions, re-explore paths already tried, and lose coherence within the first hour of complex work. No memory across sessions means every day starts from zero.</p>
+          </div>
+          <div class="problem-tag tag-red">Critical</div>
+        </div>
+        <div class="problem-item">
+          <div class="problem-num">02</div>
+          <div class="problem-text">
+            <h4>Wasted Inference Cost</h4>
+            <p>Using Opus for file searches, Grep for pattern matching, and MCPs for tasks that a CLI handles in 10 tokens — costs 10–20x more than necessary with no quality gain.</p>
+          </div>
+          <div class="problem-tag tag-red">Critical</div>
+        </div>
+        <div class="problem-item">
+          <div class="problem-num">03</div>
+          <div class="problem-text">
+            <h4>Repeated Mistakes</h4>
+            <p>Claude makes an error, you correct it, same error appears two sessions later. Without a learning system, corrections don't persist. You're retraining on every session.</p>
+          </div>
+          <div class="problem-tag tag-amber">High</div>
+        </div>
+        <div class="problem-item">
+          <div class="problem-num">04</div>
+          <div class="problem-text">
+            <h4>No Verification Loop</h4>
+            <p>Code is written, assumed correct, and integrated — without automated checkpoints. Bugs accumulate. The agent has no eval harness to know when it's wrong.</p>
+          </div>
+          <div class="problem-tag tag-amber">High</div>
+        </div>
+        <div class="problem-item">
+          <div class="problem-num">05</div>
+          <div class="problem-text">
+            <h4>Unscoped Delegation</h4>
+            <p>Subagents with no tool restrictions, no model assignment, no output format. They return walls of text the orchestrator has to reparse, burning context and adding noise.</p>
+          </div>
+          <div class="problem-tag tag-amber">High</div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="card accent">
+          <div class="card-label">The Reality</div>
+          <p style="font-size: 15px; line-height: 1.7;">Most people blame the model when sessions go wrong. The model is rarely the problem. The harness — the system of rules, memory, hooks, and delegation — is doing almost no work. That's the gap.</p>
+        </div>
+        <div class="quote-block">
+          <div class="quote-text">"Early on, I spent time building reusable workflows. Tedious to build, but this had a wild compounding effect as models and agent harnesses improved."</div>
+          <div class="quote-attr">@omarsar0 — ML researcher</div>
+        </div>
+        <div class="card" style="background: var(--surface2);">
+          <div class="card-label">What changes</div>
+          <p style="font-size: 13px; line-height: 1.75; color: var(--text-2);">When you build the harness properly: sessions run for hours without context rot. Costs drop 60–80%. The agent learns from mistakes automatically. Code is verified before you see it.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SLIDE 3: THE SYSTEM ═══ -->
+  <div class="slide slide-content" id="slide-3">
+    <div class="slide-header">
+      <div class="slide-num">02 / 04</div>
+      <div class="slide-header-text">
+        <h2>What a Harness Actually Is</h2>
+        <div class="tagline">The layer around the model that determines what it can see, remember, delegate, and verify.</div>
+      </div>
+    </div>
+
+    <div class="col-6040" style="align-items: start;">
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="system-diagram">
+          <div class="sys-layer">
+            <div class="sys-box you-box">
+              <div class="sys-box-label">You</div>
+              <div class="sys-box-name">Intent + Prompts</div>
+              <div class="sys-box-sub">What you want to happen</div>
+            </div>
+            <div class="sys-arrow">↓</div>
+            <div class="sys-box harness-box">
+              <div class="sys-box-label">The Harness · Your 80%</div>
+              <div class="sys-box-name">Rules · Hooks · Skills · Agents · Memory</div>
+              <div class="sys-box-sub">Context shaping · Delegation · Verification · Learning</div>
+            </div>
+            <div class="sys-arrow">↓</div>
+            <div class="sys-box model-box">
+              <div class="sys-box-label">The Model · Fixed</div>
+              <div class="sys-box-name">Claude / Codex / GPT-4o</div>
+              <div class="sys-box-sub">You don't control this — but you control what it sees</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-label">The 4 Harness Primitives</div>
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 4px;">
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+              <span style="font-family: var(--mono); font-size: 10px; background: var(--surface2); border: 1px solid var(--border); padding: 2px 6px; border-radius: 3px; flex-shrink: 0; margin-top: 2px; color: var(--text-3);">RULES</span>
+              <span style="font-size: 13px; color: var(--text-2); line-height: 1.5;">Always-follow .md files. The agent's non-negotiable operating standards — coding style, security, git conventions, testing requirements.</span>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+              <span style="font-family: var(--mono); font-size: 10px; background: var(--surface2); border: 1px solid var(--border); padding: 2px 6px; border-radius: 3px; flex-shrink: 0; margin-top: 2px; color: var(--text-3);">HOOKS</span>
+              <span style="font-size: 13px; color: var(--text-2); line-height: 1.5;">Trigger-based automations on tool events. Auto-format on save, lint after edit, memory persist on session end, warn before git push.</span>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+              <span style="font-family: var(--mono); font-size: 10px; background: var(--surface2); border: 1px solid var(--border); padding: 2px 6px; border-radius: 3px; flex-shrink: 0; margin-top: 2px; color: var(--text-3);">SKILLS</span>
+              <span style="font-size: 13px; color: var(--text-2); line-height: 1.5;">Workflow definitions invoked by agents or commands. TDD workflow, security checklist, code review protocol — reusable, composable.</span>
+            </div>
+            <div style="display: flex; gap: 12px; align-items: flex-start;">
+              <span style="font-family: var(--mono); font-size: 10px; background: var(--surface2); border: 1px solid var(--border); padding: 2px 6px; border-radius: 3px; flex-shrink: 0; margin-top: 2px; color: var(--text-3);">AGENTS</span>
+              <span style="font-size: 13px; color: var(--text-2); line-height: 1.5;">Scoped subagents with limited tools, assigned models, specific outputs. Delegate to the cheapest model sufficient for the task.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 20px;">
+        <div class="card accent">
+          <div class="card-label">Why this works across tools</div>
+          <p style="font-size: 13px; line-height: 1.75;">These four primitives exist in every major agent harness — Claude Code, Cursor, Codex, OpenCode. Build them once. They transfer across model upgrades. Your investment compounds as capabilities improve.</p>
+        </div>
+        <div class="card">
+          <div class="card-label">What you control vs. what you don't</div>
+          <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0;"></span>
+              <span style="font-size: 13px; color: var(--text-2);">What context loads per session</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0;"></span>
+              <span style="font-size: 13px; color: var(--text-2);">Which model handles which task</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0;"></span>
+              <span style="font-size: 13px; color: var(--text-2);">What gets verified before you see it</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0;"></span>
+              <span style="font-size: 13px; color: var(--text-2);">What the agent remembers across sessions</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); flex-shrink: 0;"></span>
+              <span style="font-size: 13px; color: var(--text-3);">Model weights and capabilities (fixed)</span>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+              <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--border-strong); flex-shrink: 0;"></span>
+              <span style="font-size: 13px; color: var(--text-3);">Training data and knowledge cutoff (fixed)</span>
+            </div>
+          </div>
+        </div>
+        <div class="cta-box" style="margin-top: 0;">
+          <div class="cta-icon">⚡</div>
+          <div class="cta-content">
+            <div class="cta-label">Do This Now</div>
+            <div class="cta-title">Create your harness directory structure</div>
+            <ul class="cta-steps">
+              <li>mkdir -p ~/.claude/rules ~/.claude/agents ~/.claude/skills ~/.claude/commands ~/.claude/sessions</li>
+              <li>This is the foundation — every principle in Act 2 drops files into these folders</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SLIDE 4: COMPOUNDING + MAP ═══ -->
+  <div class="slide slide-content" id="slide-4">
+    <div class="slide-header">
+      <div class="slide-num">03 / 04</div>
+      <div class="slide-header-text">
+        <h2>The Compounding Principle & 9 Domains</h2>
+        <div class="tagline">Every pattern you build returns more value as models improve. Here's the full map.</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 24px;">
+      <div class="two-col" style="align-items: start;">
+        <div class="compound-chart">
+          <div class="card-label" style="margin-bottom: 16px;">Where Outcomes Come From</div>
+          <div class="compound-bars">
+            <div class="compound-row">
+              <div class="compound-label">Model</div>
+              <div class="compound-bar-track">
+                <div class="compound-bar bar-model" style="width: 20%;">20%</div>
+              </div>
+            </div>
+            <div class="compound-row">
+              <div class="compound-label">Harness</div>
+              <div class="compound-bar-track">
+                <div class="compound-bar bar-harness" style="width: 55%;">55%</div>
+              </div>
+            </div>
+            <div class="compound-row">
+              <div class="compound-label">Prompting</div>
+              <div class="compound-bar-track">
+                <div class="compound-bar bar-total" style="width: 25%;">25%</div>
+              </div>
+            </div>
+          </div>
+          <div class="compound-note">Most people invest in prompting. The harness has 2x the leverage.</div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <div class="card">
+            <div class="card-label">Why it compounds</div>
+            <p style="font-size: 13px; line-height: 1.75; color: var(--text-2);">A skill you write today works with every future model. An agent you define runs the same way when Opus 5 ships. A memory hook you set up collects knowledge across every session from now on. The return on harness investment accelerates over time — not diminishes.</p>
+          </div>
+          <div class="card accent">
+            <div class="card-label">How to move through Act 2</div>
+            <p style="font-size: 13px; line-height: 1.75;">Each of the 9 principles has a concept slide and a deep-dive code slide. Read the concept, do the action, move on. You don't need to implement everything at once — stack the principles in order.</p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card-label" style="margin-bottom: 12px; padding-left: 2px;">The 9 Principles — Act 2 Map</div>
+        <div class="principles-grid">
+          <div class="principle-chip">
+            <div class="principle-chip-num">P1</div>
+            <div class="principle-chip-text">
+              <div class="principle-chip-name">Token Economics</div>
+              <div class="principle-chip-desc">Model routing, cost control, context budget</div>
+            </div>
+          </div>
+          <div class="principle-chip">
+            <div class="principle-chip-num">P2</div>
+            <div class="principle-chip-text">
+              <div class="principle-chip-name">Memory & Context</div>
+              <div class="principle-chip-desc">Session persistence, hook lifecycle</div>
+            </div>
+          </div>
+          <div class="principle-chip">
+            <div class="principle-chip-num">P3</div>
+            <div class="principle-chip-text">
+              <div class="principle-chip-name">Continuous Learning</div>
+              <div class="principle-chip-desc">Instinct capture, skill evolution</div>
+            </div>
+          </div>
+          <div class="principle-chip">
+            <div class="principle-chip-num">P4</div>
+            <div class="principle-chip-text">
+              <div class="principle-chip-name">Subagent Orchestration</div>
+              <div class="principle-chip-desc">Phase pipelines, iterative retrieval</div>
+            </div>
+          </div>
+          <div class="principle-chip">
+            <div class="principle-chip-num">P5</div>
+            <div class="principle-chip-text">
+              <div class="principle-chip-name">Verification & Evals</div>
+              <div class="principle-chip-desc">pass@k, checkpoint vs. continuous</div>
+            </div>
+          </div>
+          <div class="principle-chip">
+            <div class="principle-chip-num">P6</div>
+            <div class="principle-chip-text">
+              <div class="principle-chip-name">Parallelization</div>
+              <div class="principle-chip-desc">Minimum viable, git worktrees, cascade</div>
+            </div>
+          </div>
+          <div class="principle-chip">
+            <div class="principle-chip-num">P7</div>
+            <div class="principle-chip-text">
+              <div class="principle-chip-name">Security</div>
+              <div class="principle-chip-desc">Hook injection defense, scan pipeline</div>
+            </div>
+          </div>
+          <div class="principle-chip">
+            <div class="principle-chip-num">P8</div>
+            <div class="principle-chip-text">
+              <div class="principle-chip-name">Structured Primitives</div>
+              <div class="principle-chip-desc">Rules, hooks, skills, commands grammar</div>
+            </div>
+          </div>
+          <div class="principle-chip">
+            <div class="principle-chip-num">P9</div>
+            <div class="principle-chip-text">
+              <div class="principle-chip-name">Research-First</div>
+              <div class="principle-chip-desc">search-first skill, llms.txt, docs agents</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cta-box">
+        <div class="cta-icon">⚡</div>
+        <div class="cta-content">
+          <div class="cta-label">Optional — Before Act 2</div>
+          <div class="cta-title">Download the companion pattern examples</div>
+          <ul class="cta-steps">
+            <li>Every Act 2 CTA includes a minimal working example you can copy directly</li>
+            <li>For production-ready versions: <a href="https://github.com/c-westendorf/cursor_onboarding/tree/main/010-harness-patterns" style="color:var(--green);">https://github.com/c-westendorf/cursor_onboarding/tree/main/010-harness-patterns</a></li>
+            <li>git clone https://github.com/c-westendorf/cursor_onboarding &amp;&amp; browse ~/cursor_onboarding/010-harness-patterns</li>
+            <li>Not required — the slides teach the pattern; the repo just saves typing</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- ACT 2: PRINCIPLES -->
+<div id="act-2" class="act">
+  <div id="deck-2" class="deck">
+<!-- ═══════════════════════════════════════════════════════════
+     P1 · TOKEN ECONOMICS — CONCEPT
+═══════════════════════════════════════════════════════════ -->
+<div class="slide active" id="slide-1" data-principle="P1" data-title="Token Economics">
+  <div class="slide-header">
+    <div class="slide-num">P1 · 01/18</div>
+    <div class="slide-principle-tag tag-p1">Token Economics</div>
+    <div class="slide-header-text">
+      <h2>Route Every Task to the Cheapest Model That Can Do It</h2>
+      <div class="tagline">Using Opus for file search costs 20x more and returns the same answer. Model routing is the highest-leverage cost control available.</div>
+    </div>
+  </div>
+
+  <div class="col-6040">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card">
+        <div class="card-label">Model Selection Framework</div>
+        <table class="model-table">
+          <thead><tr><th>Task Type</th><th>Model</th><th>Why</th></tr></thead>
+          <tbody>
+            <tr><td>File search, exploration</td><td><span class="model-badge badge-haiku">Haiku</span></td><td>Fast, cheap, no reasoning needed</td></tr>
+            <tr><td>Single-file edits, clear spec</td><td><span class="model-badge badge-haiku">Haiku</span></td><td>Instruction-following only</td></tr>
+            <tr><td>Multi-file implementation</td><td><span class="model-badge badge-sonnet">Sonnet</span></td><td>Best cost/quality for coding</td></tr>
+            <tr><td>PR review, code quality</td><td><span class="model-badge badge-sonnet">Sonnet</span></td><td>Understands context, catches nuance</td></tr>
+            <tr><td>Writing docs</td><td><span class="model-badge badge-haiku">Haiku</span></td><td>Structure is simple</td></tr>
+            <tr><td>Complex architecture</td><td><span class="model-badge badge-opus">Opus</span></td><td>Deep reasoning required</td></tr>
+            <tr><td>Security analysis</td><td><span class="model-badge badge-opus">Opus</span></td><td>Can't afford to miss vulnerabilities</td></tr>
+            <tr><td>Debugging complex bugs</td><td><span class="model-badge badge-opus">Opus</span></td><td>Needs to hold entire system in mind</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="two-col">
+        <div class="metric-card">
+          <div class="metric-value">~60%</div>
+          <div class="metric-label">Cost reduction</div>
+          <div class="metric-sub">Sonnet vs Opus default</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-value">5×</div>
+          <div class="metric-label">Price gap</div>
+          <div class="metric-sub">Haiku vs Opus per token</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card accent">
+        <div class="card-label">Context Window Budget</div>
+        <p>Your 200k window shrinks fast. Each MCP tool description costs tokens before any work starts. With too many MCPs active, effective context can drop to ~70k.</p>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:12px;color:var(--text-2);">MCPs active</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--green);">≤ 10 enabled</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:12px;color:var(--text-2);">Tools active</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--green);">≤ 80 tools</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:12px;color:var(--text-2);">Autocompact at</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--green);">50% (not 95%)</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:12px;color:var(--text-2);">Thinking tokens</span>
+            <span style="font-family:var(--mono);font-size:11px;color:var(--green);">10,000 (not 32k)</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">The Haiku + Opus strategy</div>
+        <p>Sonnet sits at a 1.67× price difference from Opus — marginal for most. The real savings: Haiku at 5× cheaper than Opus for all "worker" tasks. Default to Sonnet, delegate to Haiku, escalate to Opus only when the first attempt fails or the task is architectural.</p>
+      </div>
+      <div class="cta-box" style="margin-top:0;">
+        <div class="cta-icon">⚡</div>
+        <div class="cta-content">
+          <div class="cta-label">Do This Now</div>
+          <div class="cta-title">Set your default model + token limits in settings.json</div>
+          <pre style="font-family:var(--mono);font-size:11px;background:var(--code-bg);padding:10px;border-radius:5px;margin:8px 0;color:var(--code-text);">{
+  "model": "claude-sonnet-4-5",
+  "env": {
+    "MAX_THINKING_TOKENS": "10000",
+    "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE": "50"
+  }
+}</pre>
+          <div class="tool-cli">
+            <ul class="cta-steps">
+              <li>Create or open ~/.claude/settings.json and add the above</li>
+              <li>Sonnet is your default — Opus when first attempt fails</li>
+              <li>Full token economics config → <a href="https://github.com/c-westendorf/cursor_onboarding/tree/main/010-harness-patterns/examples/settings/" style="color:var(--green);">companion repo / settings/</a></li>
+            </ul>
+          </div>
+          <div class="tool-vscode" style="display:none;">
+            <div class="vscode-note">Same file — Claude extension reads ~/.claude/settings.json. Edit it directly in any text editor.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ P1 DEEP DIVE ═══ -->
+<div class="slide" id="slide-2" data-principle="P1 ↗" data-title="Token Economics — Config">
+  <div class="slide-header">
+    <div class="slide-num">P1 · 02/18</div>
+    <div class="slide-principle-tag tag-deep">Deep Dive</div>
+    <div class="slide-header-text">
+      <h2>Token Economics — Production Config</h2>
+      <div class="tagline">Three files, five minutes. Copy, paste, done.</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">~/.claude/settings.json</span></div>
+        <pre>{
+  <ck>"model"</ck>: <cs>"sonnet"</cs>,
+  <ck>"env"</ck>: {
+    <cc>// Cut hidden thinking cost by 70%</cc>
+    <ck>"MAX_THINKING_TOKENS"</ck>: <cs>"10000"</cs>,
+
+    <cc>// Compact at 50%, not 95% (prevents context rot)</cc>
+    <ck>"CLAUDE_AUTOCOMPACT_PCT_OVERRIDE"</ck>: <cs>"50"</cs>,
+
+    <cc>// Worker subagents use Haiku (5x cheaper than Opus)</cc>
+    <ck>"CLAUDE_CODE_SUBAGENT_MODEL"</ck>: <cs>"haiku"</cs>
+  },
+  <ck>"disabledMcpServers"</ck>: [
+    <cc>// Disable per-project what you don't need</cc>
+    <cs>"playwright"</cs>, <cs>"clickhouse"</cs>, <cs>"railway"</cs>
+  ]
+}</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">~/.claude/agents/quick-search.md</span></div>
+        <pre><cc>---</cc>
+<ck>name</ck>: <cs>quick-search</cs>
+<ck>description</ck>: <cs>Fast file and pattern search</cs>
+<ck>tools</ck>: [<cs>"Glob"</cs>, <cs>"Grep"</cs>, <cs>"Read"</cs>]
+<ck>model</ck>: <cs>haiku</cs>   <cc># Explicit — never use Opus for search</cc>
+<cc>---</cc>
+
+You are a fast search agent. Your only job is to
+find files and patterns. Return file paths and
+relevant snippets. Do not summarize or analyze.</pre>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">~/.claude/commands/model-switch.md</span></div>
+        <pre><cc># Quick model switching shortcuts</cc>
+<cc># Add to your shell profile</cc>
+
+<cc># Daily default (90% of tasks)</cc>
+alias cc=<cs>'claude --model sonnet'</cs>
+
+<cc># Architecture / hard debugging</cc>
+alias cco=<cs>'claude --model opus'</cs>
+
+<cc># Bulk operations / workers</cc>
+alias cch=<cs>'claude --model haiku'</cs>
+
+<cc># In-session switching</cc>
+<cc># /model opus    → upgrade for current task</cc>
+<cc># /model sonnet  → back to default</cc>
+<cc># /cost          → check spend before escalating</cc></pre>
+      </div>
+      <div class="card green">
+        <div class="card-label">Replace mgrep for grep (50% token reduction)</div>
+        <pre style="font-family:var(--mono);font-size:11px;background:var(--green-bg);padding:10px;border-radius:5px;color:var(--text-2);line-height:1.7;margin-top:4px;"># Install
+/plugin marketplace add mixedbread-ai/mgrep
+
+# Use in place of grep/ripgrep
+mgrep "handleSubmit"       # local search
+mgrep --web "Next.js 15"   # web + local</pre>
+        <p style="margin-top:10px;">In benchmarks: ~50% fewer tokens than ripgrep for same quality results. Works across Claude Code, Codex, and Cursor.</p>
+      </div>
+      <div class="card accent">
+        <div class="card-label">MCP → CLI swap (free up ~130k context)</div>
+        <p style="font-size:13px;line-height:1.7;">Instead of GitHub MCP: create a <code style="font-family:var(--mono);font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px;">/gh-pr</code> command wrapping <code style="font-family:var(--mono);font-size:11px;background:var(--surface2);padding:1px 5px;border-radius:3px;">gh pr create</code>. Same result, zero MCP tool overhead. Do this for Supabase, Vercel, Railway too.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     P2 · MEMORY & CONTEXT — CONCEPT
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-3" data-principle="P2" data-title="Memory & Context">
+  <div class="slide-header">
+    <div class="slide-num">P2 · 03/18</div>
+    <div class="slide-principle-tag tag-p2">Memory &amp; Context</div>
+    <div class="slide-header-text">
+      <h2>Every Session Starts From Zero — Unless You Build Memory</h2>
+      <div class="tagline">Without session persistence, corrections don't carry over. The agent relearns every mistake every day.</div>
+    </div>
+  </div>
+  <div class="col-6040">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card">
+        <div class="card-label">The 3-Hook Memory Lifecycle</div>
+        <div class="hook-flow">
+          <div class="hook-step">
+            <div class="hook-step-icon">🟢</div>
+            <div class="hook-step-name">SessionStart</div>
+            <div class="hook-step-desc">Load last 7 days of session files. Inject previous context automatically.</div>
+          </div>
+          <div class="hook-step">
+            <div class="hook-step-icon">💾</div>
+            <div class="hook-step-name">PreCompact</div>
+            <div class="hook-step-desc">Before context compaction, save current state to session file.</div>
+          </div>
+          <div class="hook-step">
+            <div class="hook-step-icon">🔴</div>
+            <div class="hook-step-name">Stop</div>
+            <div class="hook-step-desc">On session end, persist learnings + summary to ~/.claude/sessions/</div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">What session files contain</div>
+        <div class="list-item"><div class="list-dot"></div><div class="list-text"><h4>What worked</h4><p>Verifiable decisions with evidence — approaches confirmed by tests passing</p></div></div>
+        <div class="list-item"><div class="list-dot"></div><div class="list-text"><h4>What failed</h4><p>Approaches attempted but discarded, with the reason why</p></div></div>
+        <div class="list-item"><div class="list-dot"></div><div class="list-text"><h4>What's remaining</h4><p>Incomplete tasks, next steps, blockers — the handoff for tomorrow</p></div></div>
+        <div class="list-item" style="border:none;"><div class="list-dot"></div><div class="list-text"><h4>Key decisions</h4><p>Architecture choices, trade-offs made, context for the next session</p></div></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card accent">
+        <div class="card-label">Strategic Compaction — not auto</div>
+        <p>Auto-compact fires at 95% context — often mid-implementation, losing variable names and partial state. Instead: compact after research (before coding), after a milestone (before next), after failed approach (before retry).</p>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--accent-border);">
+          <div style="font-family:var(--mono);font-size:11px;color:var(--accent);">Never compact mid-implementation.</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">Dynamic system prompt injection</div>
+        <p style="font-size:13px;line-height:1.7;">System prompt content has higher authority than user messages. Use <code style="font-family:var(--mono);font-size:11px;background:var(--surface2);padding:1px 4px;border-radius:3px;">--system-prompt</code> for strict behavioral rules that must be prioritized.</p>
+        <pre style="font-family:var(--mono);font-size:11px;background:var(--surface2);padding:10px;border-radius:5px;margin-top:8px;color:var(--text-2);line-height:1.7;">alias cc-dev='claude --system-prompt \
+  "$(cat ~/.claude/contexts/dev.md)"'
+alias cc-review='claude --system-prompt \
+  "$(cat ~/.claude/contexts/review.md)"'</pre>
+      </div>
+      <div class="cta-box" style="margin-top:0;">
+        <div class="cta-icon">⚡</div>
+        <div class="cta-content">
+          <div class="cta-label">Do This Now</div>
+          <div class="cta-title">Create a session-end memory hook</div>
+          <pre style="font-family:var(--mono);font-size:10px;background:var(--code-bg);padding:10px;border-radius:5px;margin:8px 0;color:var(--code-text);">// ~/.claude/hooks/session-end.js  (Stop hook)
+const fs = require('fs'), path = require('path');
+let input = '';
+process.stdin.on('data', d =&gt; input += d);
+process.stdin.on('end', () =&gt; {
+  const dir = path.join(process.env.HOME, '.claude', 'sessions');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, Date.now() + '.json'),
+    JSON.stringify(JSON.parse(input), null, 2));
+});</pre>
+          <div class="tool-cli">
+            <ul class="cta-steps">
+              <li>Open <code style="font-family:var(--mono);font-size:10px;">~/.claude/settings.json</code> (create if missing) → add under the <code style="font-family:var(--mono);font-size:10px;">"hooks"</code> key: <code style="font-family:var(--mono);font-size:10px;">"Stop": [{"matcher":"*","hooks":[{"type":"command","command":"node ~/.claude/hooks/session-end.js"}]}]</code></li>
+              <li>mkdir -p ~/.claude/sessions — session files will appear here after next session ends</li>
+              <li>Full 3-hook system → <a href="https://github.com/c-westendorf/cursor_onboarding/tree/main/010-harness-patterns/examples/hooks/" style="color:var(--green);">companion repo / hooks/</a></li>
+            </ul>
+          </div>
+          <div class="tool-vscode" style="display:none;">
+            <div class="vscode-note">Stop hooks require Claude Code CLI lifecycle events. VS Code workaround: maintain a context.md file in your project root and update it manually after each session.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ P2 DEEP DIVE ═══ -->
+<div class="slide" id="slide-4" data-principle="P2 ↗" data-title="Memory — Config">
+  <div class="slide-header">
+    <div class="slide-num">P2 · 04/18</div>
+    <div class="slide-principle-tag tag-deep">Deep Dive</div>
+    <div class="slide-header-text">
+      <h2>Memory & Context — Hook Config</h2>
+      <div class="tagline"><strong>Stop</strong> (save on end) · <strong>SessionStart</strong> (reload on open) · <strong>PreCompact</strong> (save before compaction) — three lifecycle hooks, each with one job.</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block" style="flex:0;">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">~/.claude/settings.json — add under the "hooks" key</span></div>
+        <pre>{
+  <ck>"PreCompact"</ck>: [{
+    <ck>"matcher"</ck>: <cs>"*"</cs>,
+    <ck>"hooks"</ck>: [{
+      <ck>"type"</ck>: <cs>"command"</cs>,
+      <ck>"command"</ck>: <cs>"node ~/.claude/hooks/pre-compact.js"</cs>
+    }]
+  }],
+  <ck>"SessionStart"</ck>: [{
+    <ck>"matcher"</ck>: <cs>"*"</cs>,
+    <ck>"hooks"</ck>: [{
+      <ck>"type"</ck>: <cs>"command"</cs>,
+      <ck>"command"</ck>: <cs>"node ~/.claude/hooks/session-start.js"</cs>
+    }]
+  }],
+  <ck>"Stop"</ck>: [{
+    <ck>"matcher"</ck>: <cs>"*"</cs>,
+    <ck>"hooks"</ck>: [{
+      <ck>"type"</ck>: <cs>"command"</cs>,
+      <ck>"command"</ck>: <cs>"node ~/.claude/hooks/session-end.js"</cs>
+    }]
+  }]
+}</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">Session file format — YYYY-MM-DD-topic.tmp</span></div>
+        <pre><cc># Session: 2026-03-26-auth-refactor</cc>
+<cc># Start: 09:14 | End: 14:32</cc>
+
+<ck>## What Worked</ck>
+- JWT refresh via httpOnly cookie (tests pass)
+- Middleware pattern in middleware.ts (confirmed)
+
+<ck>## What Failed</ck>
+- Redis session store: race condition on concurrent
+  requests. Abandoned — use DB sessions instead.
+
+<ck>## Remaining</ck>
+- OAuth provider integration (Google, GitHub)
+- Rate limiting on /auth/login route
+
+<ck>## Next Session Context</ck>
+File: src/auth/middleware.ts (modified)
+Branch: feature/auth-refactor</pre>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">~/.claude/contexts/dev.md</span></div>
+        <pre><cc># Development Mode Context</cc>
+<cc># Injected via: claude --system-prompt "$(cat dev.md)"</cc>
+
+You are in active implementation mode.
+Priority order:
+<cn>1</cn>. Make tests pass
+<cn>2</cn>. Follow rules in ~/.claude/rules/
+<cn>3</cn>. Keep files under 300 lines — split if larger
+<cn>4</cn>. No console.log in commits
+<cn>5</cn>. Run typecheck after every file edit
+
+Current project context:
+- Stack: TypeScript + Next.js + Supabase
+- Branch convention: feature/&lt;ticket&gt;
+- Test command: pnpm test:unit</pre>
+      </div>
+      <div class="card green">
+        <div class="card-label">How to use session files mid-session</div>
+        <p style="font-size:13px;line-height:1.7;">When hitting context limits: ask Claude to summarize current state into a new session file. Start a fresh conversation with <code style="font-family:var(--mono);font-size:11px;background:var(--green-bg);padding:1px 4px;border-radius:3px;">@~/.claude/sessions/YYYY-MM-DD.tmp</code> to resume exactly where you left off — without re-exploring.</p>
+      </div>
+      <div class="card amber" style="border-left: 3px solid var(--amber);">
+        <div class="card-label">Where this config goes</div>
+        <p style="font-size:13px;line-height:1.7;">Paste the hook config at left into <code style="font-family:var(--mono);font-size:11px;background:var(--amber-bg);padding:1px 4px;border-radius:3px;">~/.claude/settings.json</code> under a top-level <code style="font-family:var(--mono);font-size:11px;background:var(--amber-bg);padding:1px 4px;border-radius:3px;">"hooks"</code> key. Create the file if it doesn't exist — it's plain JSON.</p>
+        <pre style="font-family:var(--mono);font-size:11px;background:var(--amber-bg);padding:8px;border-radius:4px;margin-top:8px;color:var(--amber);line-height:1.7;">{ "hooks": { "Stop": [...], "SessionStart": [...], "PreCompact": [...] } }</pre>
+      </div>
+      <div class="card amber">
+        <div class="card-label">Common mistake — context pollution</div>
+        <p style="font-size:13px;line-height:1.7;">Create a new session file each day. Never append old sessions into new work — stale context from failed approaches can steer the agent down the wrong path. One file per session, then prune older than 30 days.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     P3 · CONTINUOUS LEARNING — CONCEPT
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-5" data-principle="P3" data-title="Continuous Learning">
+  <div class="slide-header">
+    <div class="slide-num">P3 · 05/18</div>
+    <div class="slide-principle-tag tag-p3">Continuous Learning</div>
+    <div class="slide-header-text">
+      <h2>Make the Agent Learn From Its Own Mistakes</h2>
+      <div class="tagline">Every repeated correction is wasted tokens. Build the feedback loop that captures patterns automatically and persists them as reusable skills.</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card">
+        <div class="card-label">The Learning Loop</div>
+        <div style="display:flex;flex-direction:column;gap:0;margin-top:4px;">
+          <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:center;">
+            <span style="font-family:var(--mono);font-size:10px;background:var(--surface2);border:1px solid var(--border);padding:2px 6px;border-radius:3px;color:var(--text-3);flex-shrink:0;">01</span>
+            <span style="font-size:13px;color:var(--text-2);">You correct the agent — a debugging fix, a workaround, a project-specific pattern</span>
+          </div>
+          <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:center;">
+            <span style="font-family:var(--mono);font-size:10px;background:var(--surface2);border:1px solid var(--border);padding:2px 6px;border-radius:3px;color:var(--text-3);flex-shrink:0;">02</span>
+            <span style="font-size:13px;color:var(--text-2);">Stop hook fires at session end — evaluates session for non-trivial patterns worth saving</span>
+          </div>
+          <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:center;">
+            <span style="font-family:var(--mono);font-size:10px;background:var(--surface2);border:1px solid var(--border);padding:2px 6px;border-radius:3px;color:var(--text-3);flex-shrink:0;">03</span>
+            <span style="font-size:13px;color:var(--text-2);">Pattern saved as instinct with confidence score → ~/.claude/skills/learned/</span>
+          </div>
+          <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:center;">
+            <span style="font-family:var(--mono);font-size:10px;background:var(--surface2);border:1px solid var(--border);padding:2px 6px;border-radius:3px;color:var(--text-3);flex-shrink:0;">04</span>
+            <span style="font-size:13px;color:var(--text-2);">/evolve clusters related instincts into a full SKILL.md — auto-loaded next session</span>
+          </div>
+          <div style="display:flex;gap:12px;padding:10px 0;align-items:center;">
+            <span style="font-family:var(--mono);font-size:10px;background:var(--surface2);border:1px solid var(--border);padding:2px 6px;border-radius:3px;color:var(--text-3);flex-shrink:0;">05</span>
+            <span style="font-size:13px;color:var(--text-2);">Same mistake never happens again — the fix is now part of the harness</span>
+          </div>
+        </div>
+      </div>
+      <div class="card accent">
+        <div class="card-label">Why Stop hook, not UserPromptSubmit</div>
+        <p>UserPromptSubmit fires on every message — adds latency to every prompt, runs piecemeal. Stop fires once at session end — evaluates the complete session, zero latency during work. Always use Stop for learning extraction.</p>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card">
+        <div class="card-label">Instinct lifecycle commands</div>
+        <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <code style="font-family:var(--mono);font-size:11px;background:var(--surface2);padding:2px 7px;border-radius:3px;flex-shrink:0;">/learn</code>
+            <span style="font-size:12px;color:var(--text-2);line-height:1.5;">Extract pattern mid-session — run right after solving something non-trivial</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <code style="font-family:var(--mono);font-size:11px;background:var(--surface2);padding:2px 7px;border-radius:3px;flex-shrink:0;">/learn-eval</code>
+            <span style="font-size:12px;color:var(--text-2);line-height:1.5;">Extract + score pattern quality before saving — prevents noise accumulation</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <code style="font-family:var(--mono);font-size:11px;background:var(--surface2);padding:2px 7px;border-radius:3px;flex-shrink:0;">/instinct-status</code>
+            <span style="font-size:12px;color:var(--text-2);line-height:1.5;">View all learned instincts with confidence scores</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <code style="font-family:var(--mono);font-size:11px;background:var(--surface2);padding:2px 7px;border-radius:3px;flex-shrink:0;">/evolve</code>
+            <span style="font-size:12px;color:var(--text-2);line-height:1.5;">Cluster related instincts into a named, reusable skill</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <code style="font-family:var(--mono);font-size:11px;background:var(--surface2);padding:2px 7px;border-radius:3px;flex-shrink:0;">/prune</code>
+            <span style="font-size:12px;color:var(--text-2);line-height:1.5;">Delete expired pending instincts (30-day TTL) — keeps the skill set clean</span>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start;">
+            <code style="font-family:var(--mono);font-size:11px;background:var(--surface2);padding:2px 7px;border-radius:3px;flex-shrink:0;">/skill-create</code>
+            <span style="font-size:12px;color:var(--text-2);line-height:1.5;">Generate skills from your git history — learns from what you've already shipped</span>
+          </div>
+        </div>
+      </div>
+      <div class="cta-box">
+        <div class="cta-icon">⚡</div>
+        <div class="cta-content">
+          <div class="cta-label">Do This Now</div>
+          <div class="cta-title">Create a pattern-capture Stop hook</div>
+          <pre style="font-family:var(--mono);font-size:10px;background:var(--code-bg);padding:10px;border-radius:5px;margin:8px 0;color:var(--code-text);">#!/bin/bash
+# ~/.claude/hooks/learn.sh  (Stop hook)
+PATTERNS="$HOME/.claude/patterns.md"
+DATE=$(date +%Y-%m-%d)
+echo "## $DATE" &gt;&gt; "$PATTERNS"
+echo "Session ended. Add reusable patterns above." &gt;&gt; "$PATTERNS"</pre>
+          <div class="tool-cli">
+            <ul class="cta-steps">
+              <li>Register: "Stop": [{ "command": "bash ~/.claude/hooks/learn.sh" }]</li>
+              <li>At end of today's session: open ~/.claude/patterns.md and add one thing you learned</li>
+              <li>Full auto-extraction system → <a href="https://github.com/c-westendorf/cursor_onboarding/tree/main/010-harness-patterns/examples/hooks/" style="color:var(--green);">companion repo / hooks/</a></li>
+            </ul>
+          </div>
+          <div class="tool-vscode" style="display:none;">
+            <div class="vscode-note">Stop hooks are Claude Code CLI only. VS Code equivalent: add a keyboard shortcut that opens ~/.claude/patterns.md for manual review after each session.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ P3 DEEP DIVE ═══ -->
+<div class="slide" id="slide-6" data-principle="P3 ↗" data-title="Learning — Config">
+  <div class="slide-header">
+    <div class="slide-num">P3 · 06/18</div>
+    <div class="slide-principle-tag tag-deep">Deep Dive</div>
+    <div class="slide-header-text">
+      <h2>Continuous Learning — Hook & Skill Config</h2>
+      <div class="tagline">The Stop hook that auto-evaluates every session and saves reusable patterns.</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">hooks.json — continuous learning</span></div>
+        <pre>{
+  <ck>"Stop"</ck>: [{
+    <ck>"matcher"</ck>: <cs>"*"</cs>,
+    <ck>"hooks"</ck>: [{
+      <ck>"type"</ck>: <cs>"command"</cs>,
+      <cc>// Evaluates session, extracts patterns,</cc>
+      <cc>// saves to ~/.claude/skills/learned/</cc>
+      <ck>"command"</ck>: <cs>"node ~/.claude/self-improving-skills/evaluate-session.js"</cs>
+    }]
+  }]
+}</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">~/.claude/skills/learned/example-instinct.md</span></div>
+        <pre><cc>---</cc>
+<ck>title</ck>: <cs>Supabase RLS policy for multi-tenant</cs>
+<ck>confidence</ck>: <cn>0.87</cn>
+<ck>created</ck>: <cs>2026-03-26</cs>
+<ck>source</ck>: <cs>session-auth-refactor</cs>
+<ck>expires</ck>: <cs>2026-04-25</cs>
+<cc>---</cc>
+
+<ck>## Pattern</ck>
+When adding RLS policies for multi-tenant Supabase,
+always use auth.uid() = user_id AND org_id = current_org().
+Never use just auth.uid() alone — misses org isolation.
+
+<ck>## Evidence</ck>
+Bug found 2026-03-26: single-tenant RLS let user A
+see user B's data within same org. Fixed with org check.
+
+<ck>## Applies When</ck>
+- Multi-tenant Supabase projects
+- Any table with both user_id and org_id columns</pre>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">Generate skills from your own git history — run inside a Claude Code session</span></div>
+        <pre><cc># Type these inside a running Claude Code session</cc>
+<cc># (the terminal where you ran `claude`)</cc>
+
+<cc># Analyze your repo — finds patterns in commits</cc>
+/skill-create
+
+<cc># Also extract instincts for continuous learning</cc>
+/skill-create --instincts
+
+<cc># This creates SKILL.md files in:</cc>
+<cc># ~/.claude/skills/learned/</cc>
+
+<cc># View what was learned</cc>
+/instinct-status
+
+<cc># Cluster into named skills after 5+ instincts</cc>
+/evolve
+
+<cc># Share instincts with your team</cc>
+/instinct-export > team-instincts.json
+
+<cc># Import from teammate</cc>
+/instinct-import team-instincts.json</pre>
+      </div>
+      <div class="card accent">
+        <div class="card-label">More robust implementation</div>
+        <p style="font-size:13px;line-height:1.7;">A self-improving skill system with confidence scoring, expiry, and team sharing: <a href="https://github.com/c-westendorf/self-improving-skills" style="color:var(--accent);font-weight:500;">github.com/c-westendorf/self-improving-skills</a></p>
+        <div style="margin-top:8px;font-family:var(--mono);font-size:11px;color:var(--text-3);">git clone https://github.com/c-westendorf/self-improving-skills ~/.claude/self-improving-skills</div>
+      </div>
+      <div class="card green">
+        <div class="card-label">What patterns are worth capturing</div>
+        <div class="list-item"><div class="list-dot"></div><div class="list-text"><h4>Debugging techniques</h4><p>Steps that resolved a class of error — especially non-obvious ones</p></div></div>
+        <div class="list-item"><div class="list-dot"></div><div class="list-text"><h4>Workarounds</h4><p>Library quirks, API edge cases, environment-specific fixes</p></div></div>
+        <div class="list-item" style="border:none;"><div class="list-dot"></div><div class="list-text"><h4>Project-specific patterns</h4><p>Conventions your codebase uses that the agent keeps getting wrong</p></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     P4 · SUBAGENT ORCHESTRATION — CONCEPT
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-7" data-principle="P4" data-title="Subagent Orchestration">
+  <div class="slide-header">
+    <div class="slide-num">P4 · 07/18</div>
+    <div class="slide-principle-tag tag-p4">Subagent Orchestration</div>
+    <div class="slide-header-text">
+      <h2>Delegate With Scope. Evaluate Every Return.</h2>
+      <div class="tagline">Subagents save context — but only if the orchestrator validates their output before accepting it. Summaries miss what they don't know to include.</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card">
+        <div class="card-label">The Sequential Phase Pipeline</div>
+        <div class="pipeline">
+          <div class="pipeline-phase">
+            <div class="phase-num">01</div>
+            <div class="phase-body">
+              <div class="phase-name">Research</div>
+              <div class="phase-desc">Explore agent gathers context, identifies patterns. Model: Haiku.</div>
+            </div>
+            <div class="phase-output">→ research-summary.md</div>
+          </div>
+          <div class="pipeline-phase">
+            <div class="phase-num">02</div>
+            <div class="phase-body">
+              <div class="phase-name">Plan</div>
+              <div class="phase-desc">Planner agent reads summary, creates implementation plan. Model: Sonnet.</div>
+            </div>
+            <div class="phase-output">→ plan.md</div>
+          </div>
+          <div class="pipeline-phase">
+            <div class="phase-num">03</div>
+            <div class="phase-body">
+              <div class="phase-name">Implement</div>
+              <div class="phase-desc">TDD guide agent reads plan, writes tests first, then code. Model: Sonnet.</div>
+            </div>
+            <div class="phase-output">→ code changes</div>
+          </div>
+          <div class="pipeline-phase">
+            <div class="phase-num">04</div>
+            <div class="phase-body">
+              <div class="phase-name">Review</div>
+              <div class="phase-desc">Code reviewer checks all changes for quality + security. Model: Opus.</div>
+            </div>
+            <div class="phase-output">→ review.md</div>
+          </div>
+          <div class="pipeline-phase" style="border-bottom:none;">
+            <div class="phase-num">05</div>
+            <div class="phase-body">
+              <div class="phase-name">Verify</div>
+              <div class="phase-desc">Build resolver runs tests, fixes issues, loops back if needed. Model: Sonnet.</div>
+            </div>
+            <div class="phase-output">→ done / loop</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card accent">
+        <div class="card-label">The Iterative Retrieval Pattern</div>
+        <p style="margin-bottom:10px;">Subagents only know the literal query — not the PURPOSE behind it. Their summaries miss what they don't know to include.</p>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--accent);font-weight:600;flex-shrink:0;">1.</span><span style="font-size:13px;color:var(--text-2);">Dispatch subagent with query <strong>and</strong> the objective (why you need it)</span></div>
+          <div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--accent);font-weight:600;flex-shrink:0;">2.</span><span style="font-size:13px;color:var(--text-2);">Orchestrator evaluates the return — is it sufficient?</span></div>
+          <div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--accent);font-weight:600;flex-shrink:0;">3.</span><span style="font-size:13px;color:var(--text-2);">If not: ask follow-up questions, send subagent back to source</span></div>
+          <div style="display:flex;gap:8px;align-items:flex-start;"><span style="color:var(--accent);font-weight:600;flex-shrink:0;">4.</span><span style="font-size:13px;color:var(--text-2);">Loop max 3 cycles — prevents infinite retrieval</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">Key orchestration rules</div>
+        <div class="list-item"><div class="list-dot"></div><div class="list-text"><h4>One input → one output per agent</h4><p>Agents with multiple responsibilities blur scope and burn context</p></div></div>
+        <div class="list-item"><div class="list-dot"></div><div class="list-text"><h4>Outputs become file inputs</h4><p>Store intermediate results in files — not just memory that compacts away</p></div></div>
+        <div class="list-item" style="border:none;"><div class="list-dot"></div><div class="list-text"><h4>/clear between phases</h4><p>Fresh context at each phase prevents cross-contamination from earlier exploration</p></div></div>
+      </div>
+      <div class="cta-box" style="margin-top:0;">
+        <div class="cta-icon">⚡</div>
+        <div class="cta-content">
+          <div class="cta-label">Do This Now</div>
+          <div class="cta-title">Create your first custom agent</div>
+          <pre style="font-family:var(--mono);font-size:10px;background:var(--code-bg);padding:10px;border-radius:5px;margin:8px 0;color:var(--code-text);">---
+name: code-reviewer
+description: Reviews code for quality and security.
+  Use after writing or modifying any code.
+model: claude-sonnet-4-5
+tools: ["Read", "Grep", "Glob", "Bash"]
+---
+
+You are a rigorous code reviewer. Read changed files,
+check for correctness and security. Output: PASS/WARN/FAIL
+with specific line references.</pre>
+          <div class="tool-cli">
+            <ul class="cta-steps">
+              <li>Save as ~/.claude/agents/code-reviewer.md</li>
+              <li>Note the tools: list — this agent can read but NOT edit</li>
+              <li>5 ready-to-use agents → <a href="https://github.com/c-westendorf/cursor_onboarding/tree/main/010-harness-patterns/examples/agents/" style="color:var(--green);">companion repo / agents/</a></li>
+            </ul>
+          </div>
+          <div class="tool-vscode" style="display:none;">
+            <div class="vscode-note">Same format — Claude extension reads ~/.claude/agents/. Create the file and it's immediately available in VS Code.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ P4 DEEP DIVE ═══ -->
+<div class="slide" id="slide-8" data-principle="P4 ↗" data-title="Orchestration — Config">
+  <div class="slide-header">
+    <div class="slide-num">P4 · 08/18</div>
+    <div class="slide-principle-tag tag-deep">Deep Dive</div>
+    <div class="slide-header-text">
+      <h2>Subagent Orchestration — Agent Definitions</h2>
+      <div class="tagline">Scoped tools, assigned models, single-responsibility outputs.</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">~/.claude/agents/planner.md</span></div>
+        <pre><cc>---</cc>
+<ck>name</ck>: <cs>planner</cs>
+<ck>description</ck>: <cs>Feature implementation planning. Invoke when
+  starting new features or complex multi-file work.</cs>
+<ck>tools</ck>: [<cs>"Read"</cs>, <cs>"Glob"</cs>, <cs>"Grep"</cs>, <cs>"WebSearch"</cs>]
+<ck>model</ck>: <cs>sonnet</cs>
+<cc>---</cc>
+
+You create implementation plans. Given a feature request:
+<cn>1</cn>. Read relevant existing code (don't modify anything)
+<cn>2</cn>. Identify affected files and dependencies
+<cn>3</cn>. Create a step-by-step plan in plan.md
+<cn>4</cn>. Estimate complexity per step (S/M/L)
+<cn>5</cn>. Flag security or performance risks
+
+Output: plan.md only. No code changes.</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">~/.claude/agents/code-reviewer.md</span></div>
+        <pre><cc>---</cc>
+<ck>name</ck>: <cs>code-reviewer</cs>
+<ck>description</ck>: <cs>Code quality and security review. Invoke after
+  implementation, before any PR or deployment.</cs>
+<ck>tools</ck>: [<cs>"Read"</cs>, <cs>"Glob"</cs>, <cs>"Grep"</cs>, <cs>"Bash"</cs>]
+<ck>model</ck>: <cs>opus</cs>   <cc># Security review needs deep reasoning</cc>
+<cc>---</cc>
+
+Review code changes for:
+- Correctness: does it do what the plan says?
+- Security: OWASP Top 10, input validation, secrets
+- Coverage: are tests present and meaningful?
+- Style: follows rules in ~/.claude/rules/
+
+Output: review.md with PASS/FAIL and line-level notes.
+Never modify files — read only.</pre>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">Orchestration dispatch — passing context correctly</span></div>
+        <pre><cc># WRONG — subagent lacks context</cc>
+"Search for auth-related files"
+
+<cc># RIGHT — includes objective</cc>
+"Search for all files touching authentication.
+ Objective: I'm adding OAuth and need to understand
+ the current auth flow before modifying it.
+ Return: file paths + a 2-line summary of what
+ each file does in the auth pipeline."
+
+<cc># After subagent returns — evaluate before accepting</cc>
+"Does this summary include the middleware chain?
+ If not, go back and find middleware.ts and check
+ if it validates JWT tokens."
+
+<cc># Max 3 cycles — then accept and proceed</cc></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">Multi-agent workflow commands — everything-claude-code skills</span></div>
+        <pre><cc># These require the everything-claude-code skill package</cc>
+<cc># (github.com/c-westendorf/cursor_onboarding)</cc>
+<cc># Without it, use the agent pattern shown left directly.</cc>
+
+<cc># Decompose complex task into parallel plan</cc>
+/multi-plan "Refactor auth module to use OAuth"
+
+<cc># Execute orchestrated multi-agent workflow</cc>
+/multi-execute
+
+<cc># Backend-specific multi-service orchestration</cc>
+/multi-backend</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     P5 · VERIFICATION & EVALS — CONCEPT
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-9" data-principle="P5" data-title="Verification & Evals">
+  <div class="slide-header">
+    <div class="slide-num">P5 · 09/18</div>
+    <div class="slide-principle-tag tag-p5">Verification &amp; Evals</div>
+    <div class="slide-header-text">
+      <h2>The Agent Should Know When It's Wrong Before You Do</h2>
+      <div class="tagline">Verification loops catch failures automatically. Evals measure improvement. Without both, you're debugging by hand at the end.</div>
+    </div>
+  </div>
+  <div class="col-6040">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="two-col" style="flex:0;">
+        <div class="card">
+          <div class="card-label">Checkpoint-Based</div>
+          <p style="font-size:12px;line-height:1.7;margin-bottom:8px;">Set explicit verification gates between phases. Agent must pass before continuing. Best for linear workflows with clear milestones.</p>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--text-3);background:var(--surface2);padding:8px;border-radius:4px;line-height:1.6;">Task → Checkpoint → pass? → next<br>no? → fix → retry</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Continuous</div>
+          <p style="font-size:12px;line-height:1.7;margin-bottom:8px;">Run tests + lint after every major change. Report regressions immediately. Best for exploratory refactoring with no clear milestones.</p>
+          <div style="font-family:var(--mono);font-size:11px;color:var(--text-3);background:var(--surface2);padding:8px;border-radius:4px;line-height:1.6;">Edit → auto-test → pass → continue<br>fail → stop &amp; fix</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">pass@k vs pass^k — choose based on your need</div>
+        <table class="passk-table">
+          <thead><tr><th>Metric</th><th>k=1</th><th>k=3</th><th>k=5</th><th>Use when</th></tr></thead>
+          <tbody>
+            <tr>
+              <td style="font-weight:600;">pass@k</td>
+              <td><span class="passk-val passk-high">70%</span></td>
+              <td><span class="passk-val passk-high">91%</span></td>
+              <td><span class="passk-val passk-high">97%</span></td>
+              <td style="font-size:11px;">At least one attempt succeeds — OK for feature work</td>
+            </tr>
+            <tr>
+              <td style="font-weight:600;">pass^k</td>
+              <td><span class="passk-val passk-high">70%</span></td>
+              <td><span class="passk-val passk-low">34%</span></td>
+              <td><span class="passk-val passk-low">17%</span></td>
+              <td style="font-size:11px;">All attempts must succeed — needed for consistency</td>
+            </tr>
+          </tbody>
+        </table>
+        <p style="font-size:12px;color:var(--text-3);margin-top:8px;font-style:italic;">Use pass@k when you need it to work. Use pass^k when consistency and determinism are essential.</p>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card accent">
+        <div class="card-label">Grader types (from Anthropic)</div>
+        <div class="list-item"><div class="list-dot"></div><div class="list-text"><h4>Code-based</h4><p>String match, binary tests, static analysis. Fast, cheap, objective — brittle to valid variations.</p></div></div>
+        <div class="list-item"><div class="list-dot"></div><div class="list-text"><h4>Model-based</h4><p>Rubric scoring, natural language assertions. Flexible, handles nuance — non-deterministic and more expensive.</p></div></div>
+        <div class="list-item" style="border:none;"><div class="list-dot"></div><div class="list-text"><h4>Human</h4><p>SME review, spot-check sampling. Gold standard — expensive and slow. Use for calibration only.</p></div></div>
+      </div>
+      <div class="card">
+        <div class="card-label">Benchmarking your skills</div>
+        <p style="font-size:13px;line-height:1.7;">Fork a conversation → run the same task WITH and WITHOUT a skill in separate worktrees → pull up a diff → compare token usage and output quality. This is how you measure whether a skill is actually helping.</p>
+      </div>
+      <div class="cta-box" style="margin-top:0;">
+        <div class="cta-icon">⚡</div>
+        <div class="cta-content">
+          <div class="cta-label">Do This Now</div>
+          <div class="cta-title">Add a PostToolUse auto-verify hook</div>
+          <pre style="font-family:var(--mono);font-size:10px;background:var(--code-bg);padding:10px;border-radius:5px;margin:8px 0;color:var(--code-text);">#!/bin/bash
+# ~/.claude/hooks/post-tool-verify.sh
+INPUT=$(cat)
+FILE=$(echo "$INPUT" | python3 -c   "import json,sys; print(json.load(sys.stdin).get('tool_input',{}).get('file_path',''))" 2&gt;/dev/null)
+[[ "$FILE" == *.ts ]] &amp;&amp; npx tsc --noEmit &amp;&amp; exit 0 || exit 2
+[[ "$FILE" == *.py ]] &amp;&amp; python -m pytest -q 2&gt;&amp;1 | tail -5 || exit 2
+exit 0</pre>
+          <div class="tool-cli">
+            <ul class="cta-steps">
+              <li>Register: "PostToolUse": [{ "matcher": "Write|Edit", "command": "bash ~/.claude/hooks/post-tool-verify.sh" }]</li>
+              <li>Exit code 2 blocks Claude — it sees the error output and self-corrects</li>
+              <li>Full verification hook → <a href="https://github.com/c-westendorf/cursor_onboarding/tree/main/010-harness-patterns/examples/hooks/" style="color:var(--green);">companion repo / hooks/</a></li>
+            </ul>
+          </div>
+          <div class="tool-vscode" style="display:none;">
+            <div class="vscode-note">PostToolUse hooks are Claude Code CLI only. VS Code equivalent: enable "Run on Save" in your test extension (Jest Runner, Python Test Explorer) for similar automatic feedback.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ P5 DEEP DIVE ═══ -->
+<div class="slide" id="slide-10" data-principle="P5 ↗" data-title="Evals — Config">
+  <div class="slide-header">
+    <div class="slide-num">P5 · 10/18</div>
+    <div class="slide-principle-tag tag-deep">Deep Dive</div>
+    <div class="slide-header-text">
+      <h2>Verification & Evals — Hook & Command Config</h2>
+      <div class="tagline">Auto-verify after every edit. Use checkpoint/verify commands for phase gates.</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">hooks.json — PostToolUse verification</span></div>
+        <pre>{
+  <ck>"PostToolUse"</ck>: [
+    {
+      <cc>// TypeScript: typecheck after every edit</cc>
+      <ck>"matcher"</ck>: <cs>"tool == 'Edit' && file_path matches '\\.tsx?$'"</cs>,
+      <ck>"hooks"</ck>: [{
+        <ck>"type"</ck>: <cs>"command"</cs>,
+        <ck>"command"</ck>: <cs>"npx tsc --noEmit 2>&amp;1 | head -20"</cs>
+      }]
+    },
+    {
+      <cc>// Python: run tests after edit</cc>
+      <ck>"matcher"</ck>: <cs>"tool == 'Edit' && file_path matches '\\.py$'"</cs>,
+      <ck>"hooks"</ck>: [{
+        <ck>"type"</ck>: <cs>"command"</cs>,
+        <ck>"command"</ck>: <cs>"python -m pytest tests/ -x -q 2>&amp;1 | tail -15"</cs>
+      }]
+    },
+    {
+      <cc>// Any edit: warn if console.log present</cc>
+      <ck>"matcher"</ck>: <cs>"tool == 'Edit'"</cs>,
+      <ck>"hooks"</ck>: [{
+        <ck>"type"</ck>: <cs>"command"</cs>,
+        <ck>"command"</ck>: <cs>"grep -n 'console\\.log' \"$file_path\" &amp;&amp; echo '[Hook] Remove console.log' &gt;&amp;2 || true"</cs>
+      }]
+    }
+  ]
+}</pre>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">Verification commands in practice</span></div>
+        <pre><cc># Save current verification state</cc>
+/checkpoint
+
+<cc># Run full verification loop</cc>
+<cc># (build + test + lint + typecheck + security)</cc>
+/verify
+
+<cc># Evaluate current state against defined criteria</cc>
+/eval "auth module should handle 401, 403, 500"
+
+<cc># Run full test coverage analysis</cc>
+/test-coverage
+
+<cc># Quality gate — block before prod</cc>
+/quality-gate
+
+<cc># Run harness audit (reliability + risk posture)</cc>
+/harness-audit</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">Benchmarking skill impact with git worktrees</span></div>
+        <pre><cc># Create two worktrees for the same task</cc>
+git worktree add ../bench-with    bench-with-skill
+git worktree add ../bench-without bench-without-skill
+
+<cc># In bench-with: run task WITH the skill active</cc>
+cd ../bench-with &amp;&amp; claude
+
+<cc># In bench-without: run same task WITHOUT skill</cc>
+cd ../bench-without &amp;&amp; claude
+
+<cc># Compare outputs</cc>
+diff ../bench-with/output.md ../bench-without/output.md
+
+<cc># Token usage: check /cost in each session</cc></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     P6 · PARALLELIZATION — CONCEPT
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-11" data-principle="P6" data-title="Parallelization">
+  <div class="slide-header">
+    <div class="slide-num">P6 · 11/18</div>
+    <div class="slide-principle-tag tag-p6">Parallelization</div>
+    <div class="slide-header-text">
+      <h2>Minimum Viable Parallelization</h2>
+      <div class="tagline">More terminals ≠ more output. The goal is: how much can you achieve with the fewest instances? Add terminals only when you have a genuine, non-overlapping reason.</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card">
+        <div class="card-label">Proven parallel patterns</div>
+        <div class="list-item">
+          <div class="list-dot" style="background:var(--green);"></div>
+          <div class="list-text"><h4>Main chat: code changes</h4><p>One instance owns all file modifications. Never split code changes across instances without worktrees.</p></div>
+        </div>
+        <div class="list-item">
+          <div class="list-dot" style="background:var(--green);"></div>
+          <div class="list-text"><h4>Fork: codebase questions</h4><p>Run /fork for "how does X work?" exploration — no file writes, just reads and answers.</p></div>
+        </div>
+        <div class="list-item">
+          <div class="list-dot" style="background:var(--green);"></div>
+          <div class="list-text"><h4>Fork: external research</h4><p>Documentation scraping, GitHub searches, API reference — parallel to ongoing implementation.</p></div>
+        </div>
+        <div class="list-item" style="border:none;">
+          <div class="list-dot" style="background:var(--green);"></div>
+          <div class="list-text"><h4>Worktrees: overlapping work</h4><p>When two instances MUST touch the same codebase — use git worktrees to isolate changes.</p></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-label">The Cascade Method (3–4 max)</div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:4px;">
+          <div style="flex:1;padding:10px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:6px;text-align:center;">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--accent);">OLDEST</div>
+            <div style="font-size:12px;margin-top:2px;">Tab 1</div>
+          </div>
+          <div style="color:var(--text-3);font-size:14px;">→</div>
+          <div style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;text-align:center;">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text-3);">ACTIVE</div>
+            <div style="font-size:12px;margin-top:2px;">Tab 2</div>
+          </div>
+          <div style="color:var(--text-3);font-size:14px;">→</div>
+          <div style="flex:1;padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;text-align:center;">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--text-3);">ACTIVE</div>
+            <div style="font-size:12px;margin-top:2px;">Tab 3</div>
+          </div>
+          <div style="color:var(--text-3);font-size:14px;">→</div>
+          <div style="flex:1;padding:10px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:6px;text-align:center;">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--green);">NEWEST</div>
+            <div style="font-size:12px;margin-top:2px;">Tab 4</div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--text-2);margin-top:10px;">Sweep left-to-right. New tasks open right. When tabs exceed 4, close the oldest before opening new.</p>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card amber">
+        <div class="card-label">When NOT to parallelize</div>
+        <div class="list-item" style="padding:8px 0;">
+          <div class="list-dot" style="background:var(--amber);"></div>
+          <div class="list-text"><p>You're still learning a single-instance workflow</p></div>
+        </div>
+        <div class="list-item" style="padding:8px 0;">
+          <div class="list-dot" style="background:var(--amber);"></div>
+          <div class="list-text"><p>The task could be handled by a script or subagent instead</p></div>
+        </div>
+        <div class="list-item" style="padding:8px 0;border:none;">
+          <div class="list-dot" style="background:var(--amber);"></div>
+          <div class="list-text"><p>The tasks are sequential (upstream dependency between them)</p></div>
+        </div>
+      </div>
+      <div class="card accent">
+        <div class="card-label">The two-instance kickoff (new projects)</div>
+        <div style="display:flex;gap:12px;margin-top:4px;">
+          <div style="flex:1;padding:12px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:6px;">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--accent);margin-bottom:4px;">INSTANCE 1</div>
+            <div style="font-size:12px;font-weight:600;margin-bottom:4px;">Scaffolding</div>
+            <div style="font-size:11px;color:var(--text-2);line-height:1.5;">Project structure, configs, CLAUDE.md, rules, agents. Gets the skeleton in place.</div>
+          </div>
+          <div style="flex:1;padding:12px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:6px;">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--green);margin-bottom:4px;">INSTANCE 2</div>
+            <div style="font-size:12px;font-weight:600;margin-bottom:4px;">Research</div>
+            <div style="font-size:11px;color:var(--text-2);line-height:1.5;">PRD, architecture diagrams, documentation clips. Feeds context to Instance 1.</div>
+          </div>
+        </div>
+      </div>
+      <div class="cta-box" style="margin-top:0;">
+        <div class="cta-icon">⚡</div>
+        <div class="cta-content">
+          <div class="cta-label">Do This Now</div>
+          <div class="cta-title">Set up your first worktree for parallel work</div>
+          <div class="tool-cli">
+            <ul class="cta-steps">
+              <li>git worktree add ../scratch scratch-branch</li>
+              <li>cd ../scratch &amp;&amp; claude — use this for codebase exploration only</li>
+              <li>Use /rename to label each Claude session clearly</li>
+              <li>Pattern: exploration in worktree 1, implementation in worktree 2 — no context bleed</li>
+            </ul>
+          </div>
+          <div class="tool-vscode" style="display:none;">
+            <div class="vscode-note">Open the worktree folder in a second VS Code window (File → Open Folder). The Claude extension runs independently in each window — same parallel isolation.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ P6 DEEP DIVE ═══ -->
+<div class="slide" id="slide-12" data-principle="P6 ↗" data-title="Parallelization — Config">
+  <div class="slide-header">
+    <div class="slide-num">P6 · 12/18</div>
+    <div class="slide-principle-tag tag-deep">Deep Dive</div>
+    <div class="slide-header-text">
+      <h2>Parallelization — Worktrees & Session Management</h2>
+      <div class="tagline">Git worktrees are the isolation primitive. tmux is the persistence layer.</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">Git worktrees — parallel instances without conflicts</span></div>
+        <pre><cc># Create worktrees for parallel features</cc>
+git worktree add ../project-auth    feature/auth
+git worktree add ../project-api     feature/api-v2
+git worktree add ../project-scratch scratch
+
+<cc># Each worktree = independent Claude instance</cc>
+<cc># No git conflicts, clean working directories</cc>
+cd ../project-auth &amp;&amp; claude
+cd ../project-api  &amp;&amp; claude   <cc># separate terminal</cc>
+
+<cc># Name your chats so you don't get confused</cc>
+<cc># (in each Claude session)</cc>
+/rename auth-refactor-march
+/rename api-v2-implementation
+
+<cc># List all worktrees</cc>
+git worktree list
+
+<cc># Remove when done</cc>
+git worktree remove ../project-scratch</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">tmux — persistent sessions for long-running work</span></div>
+        <pre><cc># Create a named session</cc>
+tmux new-session -s dev
+
+<cc># Claude runs here, you can detach safely</cc>
+<cc># Ctrl+B then D to detach</cc>
+
+<cc># Reattach later</cc>
+tmux attach -t dev
+
+<cc># Multiple windows in one session</cc>
+tmux new-window -t dev     <cc># new window</cc>
+tmux select-window -t dev:0 <cc># switch to window 0</cc>
+
+<cc># Hook to remind Claude to use tmux for long ops</cc>
+<cc># (add to hooks.json PreToolUse)</cc>
+<cc>"matcher": "npm run|pytest|cargo build"</cc>
+<cc>"command": "[ -z $TMUX ] &amp;&amp; echo 'Use tmux' &gt;&amp;2"</cc></pre>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">Keyboard shortcuts for efficient multi-instance work</span></div>
+        <pre><cc># In Claude Code — essential shortcuts</cc>
+Ctrl+U      <cc># Delete entire line (faster than backspace)</cc>
+!           <cc># Quick bash command prefix</cc>
+@           <cc># Search for files by name</cc>
+/           <cc># Initiate slash commands</cc>
+Shift+Enter <cc># Multi-line input without submitting</cc>
+Esc Esc     <cc># Interrupt Claude / restore code</cc>
+
+<cc># Session management</cc>
+/fork       <cc># Fork conversation for parallel task</cc>
+/rename     <cc># Name the current chat</cc>
+/rewind     <cc># Go back to previous state</cc>
+/checkpoints <cc># File-level undo points</cc>
+/sessions   <cc># View session history</cc>
+/compact    <cc># Manual context compaction</cc>
+/cost       <cc># Check token spend</cc></pre>
+      </div>
+      <div class="card green">
+        <div class="card-label">Background processes — save input tokens</div>
+        <p style="font-size:13px;line-height:1.75;">Run long operations (builds, test suites, log tailing) in tmux outside Claude. Copy only the relevant output into the session. This avoids streaming the full output through Claude's context — input tokens are $5/M for Opus, so a 10,000-line build log is expensive.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     P7 · SECURITY — CONCEPT
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-13" data-principle="P7" data-title="Security">
+  <div class="slide-header">
+    <div class="slide-num">P7 · 13/18</div>
+    <div class="slide-principle-tag tag-p7">Security</div>
+    <div class="slide-header-text">
+      <h2>Scan Your Harness Before It Scans Your Codebase</h2>
+      <div class="tagline">Hooks, MCP configs, agent definitions, and CLAUDE.md can all be vectors. Most harnesses ship with zero security review.</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card">
+        <div class="card-label">AgentShield — 5 scan categories</div>
+        <div class="list-item">
+          <div class="list-dot" style="background:#8B1A1A;"></div>
+          <div class="list-text"><h4>Secrets detection (14 patterns)</h4><p>API keys, tokens, credentials in CLAUDE.md, hooks, and MCP configs. Catches sk-, ghp_, AKIA patterns before they leak.</p></div>
+        </div>
+        <div class="list-item">
+          <div class="list-dot" style="background:#8B1A1A;"></div>
+          <div class="list-text"><h4>Hook injection analysis</h4><p>Hooks that execute unsanitized input can be exploit vectors. AgentShield finds injection risks in hook command strings.</p></div>
+        </div>
+        <div class="list-item">
+          <div class="list-dot" style="background:#8B1A1A;"></div>
+          <div class="list-text"><h4>MCP server risk profiling</h4><p>Each MCP exposes surface area. AgentShield scores each server's risk level and flags overpermissioned configs.</p></div>
+        </div>
+        <div class="list-item">
+          <div class="list-dot" style="background:#7A4800;"></div>
+          <div class="list-text"><h4>Permission auditing</h4><p>Agents with tool sets wider than their defined job scope. Least privilege principle applied to agent definitions.</p></div>
+        </div>
+        <div class="list-item" style="border:none;">
+          <div class="list-dot" style="background:#7A4800;"></div>
+          <div class="list-text"><h4>Agent config review</h4><p>Instructions that could be manipulated through prompt injection in agent .md files.</p></div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card accent">
+        <div class="card-label">The Red/Blue/Auditor scan pipeline (--opus flag)</div>
+        <div style="display:flex;gap:10px;margin-top:4px;">
+          <div style="flex:1;padding:10px;background:#FDEAEA;border:1px solid #E8B4B4;border-radius:6px;">
+            <div style="font-family:var(--mono);font-size:10px;color:#8B1A1A;margin-bottom:3px;">ATTACKER</div>
+            <div style="font-size:11px;color:var(--text-2);line-height:1.5;">Finds exploit chains and attack surfaces in the harness config</div>
+          </div>
+          <div style="flex:1;padding:10px;background:var(--green-bg);border:1px solid var(--green-border);border-radius:6px;">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--green);margin-bottom:3px;">DEFENDER</div>
+            <div style="font-size:11px;color:var(--text-2);line-height:1.5;">Evaluates existing protections against each attack vector</div>
+          </div>
+          <div style="flex:1;padding:10px;background:var(--accent-bg);border:1px solid var(--accent-border);border-radius:6px;">
+            <div style="font-family:var(--mono);font-size:10px;color:var(--accent);margin-bottom:3px;">AUDITOR</div>
+            <div style="font-size:11px;color:var(--text-2);line-height:1.5;">Synthesizes both into prioritized risk report with fix guidance</div>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--text-2);margin-top:10px;">Adversarial reasoning, not just pattern matching. Three Opus agents run in parallel.</p>
+      </div>
+      <div class="card">
+        <div class="card-label">Hook-based secret detection (preventative)</div>
+        <p style="font-size:13px;line-height:1.7;margin-bottom:8px;">A <code style="font-family:var(--mono);font-size:11px;background:var(--surface2);padding:1px 4px;border-radius:3px;">UserPromptSubmit</code> hook that scans your prompt for secret patterns before sending. Catches <code style="font-family:var(--mono);font-size:11px;">sk-</code>, <code style="font-family:var(--mono);font-size:11px;">ghp_</code>, <code style="font-family:var(--mono);font-size:11px;">AKIA</code> before they enter context.</p>
+        <div style="font-family:var(--mono);font-size:11px;background:var(--surface2);padding:8px;border-radius:5px;color:var(--text-2);">Output grades: A–F<br>Exit code 2 on critical findings (blocks CI)</div>
+      </div>
+      <div class="cta-box" style="margin-top:0;">
+        <div class="cta-icon">⚡</div>
+        <div class="cta-content">
+          <div class="cta-label">Do This Now</div>
+          <div class="cta-title">Add a credential-scan hook to catch secrets before Claude sees them</div>
+          <pre style="font-family:var(--mono);font-size:10px;background:var(--code-bg);padding:10px;border-radius:5px;margin:8px 0;color:var(--code-text);">// ~/.claude/hooks/secret-scan.js  (UserPromptSubmit)
+const PATTERNS = [/sk-[a-zA-Z0-9]{20,}/, /AKIA[0-9A-Z]{16}/,
+  /ghp_[a-zA-Z0-9]{36}/, /password\s*[:=]\s*\S+/i];
+let input = '';
+process.stdin.on('data', d =&gt; input += d);
+process.stdin.on('end', () =&gt; {
+  const { prompt } = JSON.parse(input);
+  if (PATTERNS.some(p =&gt; p.test(prompt))) {
+    process.stderr.write('Secret detected — remove it and retry.
+');
+    process.exit(2); // blocks Claude
+  }
+});</pre>
+          <div class="tool-cli">
+            <ul class="cta-steps">
+              <li>Register: "UserPromptSubmit": [{ "command": "node ~/.claude/hooks/secret-scan.js" }]</li>
+              <li>Exit code 2 blocks the prompt — Claude never sees the credential</li>
+              <li>Extended pattern library → <a href="https://github.com/c-westendorf/cursor_onboarding/tree/main/010-harness-patterns/examples/hooks/" style="color:var(--green);">companion repo / hooks/</a></li>
+            </ul>
+          </div>
+          <div class="tool-vscode" style="display:none;">
+            <div class="vscode-note">UserPromptSubmit hooks are Claude Code CLI only. VS Code workaround: use file references (@filename) instead of pasting content with secrets directly into the chat.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ P7 DEEP DIVE ═══ -->
+<div class="slide" id="slide-14" data-principle="P7 ↗" data-title="Security — Config">
+  <div class="slide-header">
+    <div class="slide-num">P7 · 14/18</div>
+    <div class="slide-principle-tag tag-deep">Deep Dive</div>
+    <div class="slide-header-text">
+      <h2>Security — Hook Config & Scan Commands</h2>
+      <div class="tagline">Preventative hooks + AgentShield scanning = defence in depth for your harness.</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">hooks.json — secret detection + git review</span></div>
+        <pre>{
+  <ck>"UserPromptSubmit"</ck>: [{
+    <ck>"matcher"</ck>: <cs>"*"</cs>,
+    <ck>"hooks"</ck>: [{
+      <ck>"type"</ck>: <cs>"command"</cs>,
+      <cc>// Block prompts containing secret patterns</cc>
+      <ck>"command"</ck>: <cs>"node ~/.claude/hooks/secret-scan.js"</cs>
+    }]
+  }],
+  <ck>"PreToolUse"</ck>: [{
+    <cc>// Require review before git push</cc>
+    <ck>"matcher"</ck>: <cs>"tool == 'Bash' && command matches 'git push'"</cs>,
+    <ck>"hooks"</ck>: [{
+      <ck>"type"</ck>: <cs>"command"</cs>,
+      <ck>"command"</ck>: <cs>"git diff HEAD~1 | head -100 &gt;&amp;2 &amp;&amp; echo 'Review above — continue?' &gt;&amp;2"</cs>
+    }]
+  }],
+  <ck>"PostToolUse"</ck>: [{
+    <cc>// Block reading .env, .key, .pem files</cc>
+    <ck>"matcher"</ck>: <cs>"tool == 'Read' && file_path matches '\\.(env|key|pem)$'"</cs>,
+    <ck>"hooks"</ck>: [{
+      <ck>"type"</ck>: <cs>"command"</cs>,
+      <ck>"command"</ck>: <cs>"echo '[Security] Blocked sensitive file read' &gt;&amp;2; exit 2"</cs>
+    }]
+  }]
+}</pre>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">~/.claude/hooks/secret-scan.js</span></div>
+        <pre><cc>// UserPromptSubmit hook — runs before Claude sees each message</cc>
+<cc>// exit 2 = block the prompt; exit 0 = allow through</cc>
+const SECRET_PATTERNS = [
+  { pattern: /sk-[a-zA-Z0-9]{20,}/, label: <cs>'OpenAI API key'</cs> },
+  { pattern: /AKIA[0-9A-Z]{16}/, label: <cs>'AWS access key'</cs> },
+  { pattern: /ghp_[a-zA-Z0-9]{36}/, label: <cs>'GitHub PAT'</cs> },
+  { pattern: /gho_[a-zA-Z0-9]{36}/, label: <cs>'GitHub OAuth token'</cs> },
+  { pattern: /password\s*[:=]\s*["'][^"']{4,}["']/i, label: <cs>'Inline password'</cs> },
+  { pattern: /-----BEGIN.*PRIVATE KEY-----/, label: <cs>'Private key'</cs> },
+];
+let input = <cs>''</cs>;
+process.stdin.on(<cs>'data'</cs>, chunk =&gt; { input += chunk; });
+process.stdin.on(<cs>'end'</cs>, () =&gt; {
+  const { prompt = <cs>''</cs> } = JSON.parse(input);
+  for (const { pattern, label } of SECRET_PATTERNS) {
+    if (pattern.test(prompt)) {
+      process.stderr.write(<cs>`⚠️  Secret detected: ${label}\nRemove before sending.\n`</cs>);
+      process.exit(2); <cc>// block</cc>
+    }
+  }
+  process.exit(0); <cc>// allow</cc>
+});</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">~/.claude/rules/security.md</span></div>
+        <pre><cc># Security Rules — Always Follow</cc>
+
+<ck>## Mandatory checks before any code change</ck>
+- Never hardcode secrets, API keys, or tokens
+- Always validate and sanitize user inputs
+- Use parameterized queries — never string concat SQL
+- Check OWASP Top 10 for web endpoints
+
+<ck>## File access restrictions</ck>
+- Never read .env files directly — use process.env
+- Never log sensitive data (tokens, passwords, PII)
+- Never commit console.log to main branch
+
+<ck>## Before git push</ck>
+- Run: git diff HEAD | grep -E '(sk-|ghp_|AKIA)'
+- Confirm no secrets in diff before pushing</pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     P8 · STRUCTURED PRIMITIVES — CONCEPT
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-15" data-principle="P8" data-title="Structured Primitives">
+  <div class="slide-header">
+    <div class="slide-num">P8 · 15/18</div>
+    <div class="slide-principle-tag tag-p8">Structured Primitives</div>
+    <div class="slide-header-text">
+      <h2>Rules, Hooks, Skills, Commands — The Grammar of Agent Behavior</h2>
+      <div class="tagline">These four primitives are the vocabulary of your harness. Used together, they make agent behavior consistent, auditable, and transferable.</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card">
+        <div class="card-label">What lives where</div>
+        <div style="display:flex;flex-direction:column;gap:0;margin-top:4px;">
+          <div style="padding:11px 0;border-bottom:1px solid var(--border);">
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:4px;">
+              <code style="font-family:var(--mono);font-size:10px;background:#E8F5EE;border:1px solid #90D4B0;padding:2px 6px;border-radius:3px;color:#1A6B4A;">~/.claude/rules/</code>
+              <span style="font-size:11px;color:var(--text-3);">Always loaded · highest authority</span>
+            </div>
+            <p style="font-size:12px;color:var(--text-2);">Language-agnostic standards: security, testing, git, coding style, performance. Install common/ always. Add language stack as needed.</p>
+          </div>
+          <div style="padding:11px 0;border-bottom:1px solid var(--border);">
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:4px;">
+              <code style="font-family:var(--mono);font-size:10px;background:var(--surface2);border:1px solid var(--border);padding:2px 6px;border-radius:3px;color:var(--text-3);">hooks/hooks.json</code>
+              <span style="font-size:11px;color:var(--text-3);">Trigger-based · tool events</span>
+            </div>
+            <p style="font-size:12px;color:var(--text-2);">Fire on PreToolUse, PostToolUse, Stop, SessionStart. Automate formatting, verification, memory, secrets detection.</p>
+          </div>
+          <div style="padding:11px 0;border-bottom:1px solid var(--border);">
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:4px;">
+              <code style="font-family:var(--mono);font-size:10px;background:var(--surface2);border:1px solid var(--border);padding:2px 6px;border-radius:3px;color:var(--text-3);">~/.claude/skills/</code>
+              <span style="font-size:11px;color:var(--text-3);">Invoked on demand · workflows</span>
+            </div>
+            <p style="font-size:12px;color:var(--text-2);">Richer than rules — multi-step workflows with context. TDD, security review, eval harness, continuous learning.</p>
+          </div>
+          <div style="padding:11px 0;">
+            <div style="display:flex;gap:10px;align-items:center;margin-bottom:4px;">
+              <code style="font-family:var(--mono);font-size:10px;background:var(--surface2);border:1px solid var(--border);padding:2px 6px;border-radius:3px;color:var(--text-3);">~/.claude/commands/</code>
+              <span style="font-size:11px;color:var(--text-3);">Slash commands · quick exec</span>
+            </div>
+            <p style="font-size:12px;color:var(--text-2);">Skills invoked via /tdd, /e2e, /code-review, /build-fix. Chain multiple commands in a single prompt.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card">
+        <div class="card-label">Cross-tool compatibility</div>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:12px;font-weight:600;">Claude Code</span>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--green);">Native · 60 commands · 28 agents</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:12px;font-weight:600;">Cursor IDE</span>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--green);">Full parity · YAML rules</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:12px;font-weight:600;">Codex CLI</span>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--green);">AGENTS.md · skills native</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;">
+            <span style="font-size:12px;font-weight:600;">OpenCode</span>
+            <span style="font-family:var(--mono);font-size:10px;color:var(--green);">31 commands · plugin hooks</span>
+          </div>
+        </div>
+        <p style="font-size:12px;color:var(--text-3);margin-top:10px;font-style:italic;">Build once. Works across every harness upgrade.</p>
+      </div>
+      <div class="card accent">
+        <div class="card-label">Hook profile — tune strictness at runtime</div>
+        <pre style="font-family:var(--mono);font-size:11px;color:var(--text-2);background:var(--accent-bg);padding:10px;border-radius:5px;margin-top:4px;line-height:1.7;"># Tune hook strictness without editing files
+export ECC_HOOK_PROFILE=minimal   # fast, few checks
+export ECC_HOOK_PROFILE=standard  # default
+export ECC_HOOK_PROFILE=strict    # all checks
+
+# Disable specific hooks temporarily
+export ECC_DISABLED_HOOKS="pre:bash:tmux-reminder"</pre>
+      </div>
+      <div class="cta-box" style="margin-top:0;">
+        <div class="cta-icon">⚡</div>
+        <div class="cta-content">
+          <div class="cta-label">Do This Now</div>
+          <div class="cta-title">Create your first rule file</div>
+          <pre style="font-family:var(--mono);font-size:10px;background:var(--code-bg);padding:10px;border-radius:5px;margin:8px 0;color:var(--code-text);"># ~/.claude/rules/testing.md
+# Testing Standards
+
+- Write tests before implementing (TDD)
+- Every public function needs at least one test
+- Mock only at system boundaries
+- Tests must pass before committing
+- 80%+ coverage required</pre>
+          <div class="tool-cli">
+            <ul class="cta-steps">
+              <li>Claude reads all files in ~/.claude/rules/ at the start of every conversation</li>
+              <li>Create one file per concern: testing.md, security.md, git.md</li>
+              <li>Ready-to-use rule files (testing, security, git) → <a href="https://github.com/c-westendorf/cursor_onboarding/tree/main/010-harness-patterns/examples/rules/" style="color:var(--green);">companion repo / rules/</a></li>
+            </ul>
+          </div>
+          <div class="tool-vscode" style="display:none;">
+            <div class="vscode-note">Same format — Claude extension reads ~/.claude/rules/. Create the markdown file and it's active immediately in VS Code.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ P8 DEEP DIVE ═══ -->
+<div class="slide" id="slide-16" data-principle="P8 ↗" data-title="Primitives — Structure">
+  <div class="slide-header">
+    <div class="slide-num">P8 · 16/18</div>
+    <div class="slide-principle-tag tag-deep">Deep Dive</div>
+    <div class="slide-header-text">
+      <h2>Structured Primitives — File Structure & Examples</h2>
+      <div class="tagline">What a production rules folder, skill, and command actually look like.</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">~/.claude/rules/testing.md</span></div>
+        <pre><cc># Testing Rules — Always Follow</cc>
+
+<ck>## TDD Workflow (non-negotiable)</ck>
+<cn>1</cn>. Write failing test FIRST (RED)
+<cn>2</cn>. Write minimal code to pass (GREEN)
+<cn>3</cn>. Refactor with tests passing (IMPROVE)
+<cn>4</cn>. Verify 80%+ coverage before PR
+
+<ck>## Test structure</ck>
+- Unit tests: test one function in isolation
+- Integration: test module boundaries
+- E2E: test critical user flows only (Playwright)
+- Never mock what you can test directly
+
+<ck>## Coverage floor</ck>
+80% line coverage is the minimum.
+New code without tests must not be merged.
+Run: pnpm test:coverage — confirm before /verify</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">~/.claude/skills/tdd-workflow/README.md</span></div>
+        <pre><cc>---</cc>
+<ck>name</ck>: <cs>tdd-workflow</cs>
+<ck>description</ck>: <cs>Full TDD cycle. Invoke via /tdd or
+  when implementing any non-trivial feature.</cs>
+<ck>triggers</ck>: [<cs>"new feature"</cs>, <cs>"implement"</cs>, <cs>"add function"</cs>]
+<cc>---</cc>
+
+<ck>## Step 1: Define interfaces first</ck>
+Write the function signatures and types before
+any implementation. Get the API right first.
+
+<ck>## Step 2: Write failing tests (RED)</ck>
+Tests must fail before you write implementation.
+If they pass immediately, your test is wrong.
+
+<ck>## Step 3: Minimal implementation (GREEN)</ck>
+Write the simplest code that makes tests pass.
+Resist adding features not covered by a test.
+
+<ck>## Step 4: Refactor (IMPROVE)</ck>
+Clean up with tests as a safety net.
+Run /verify after refactor to confirm passing.</pre>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">Chaining commands — full workflow in one prompt</span></div>
+        <pre><cc># Chain skills in a single session</cc>
+
+<cc># New feature end-to-end</cc>
+/plan "Add OAuth login with Google"
+<cc># → review plan.md, approve</cc>
+/tdd
+<cc># → implementation with tests</cc>
+/code-review
+<cc># → quality + security check</cc>
+/verify
+<cc># → full build + test + lint</cc>
+
+<cc># Bug fix workflow</cc>
+/tdd              <cc># write failing test that reproduces bug</cc>
+<cc># implement fix  → test passes</cc>
+/code-review      <cc># check for regressions</cc>
+
+<cc># Pre-production checklist</cc>
+/security-scan    <cc># OWASP audit</cc>
+/e2e              <cc># Playwright critical flows</cc>
+/test-coverage    <cc># confirm 80%+</cc>
+/quality-gate     <cc># final gate</cc></pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">Full directory structure — production harness</span></div>
+        <pre>~/.claude/
+├── rules/
+│   ├── common/        <cc># security, testing, git, style</cc>
+│   └── python/        <cc># or typescript/ golang/ swift/</cc>
+├── agents/
+│   ├── planner.md
+│   ├── code-reviewer.md
+│   └── security-reviewer.md
+├── skills/
+│   ├── tdd-workflow/
+│   ├── continuous-learning-v2/
+│   └── search-first/
+├── commands/          <cc># /tdd /plan /verify etc</cc>
+├── sessions/          <cc># YYYY-MM-DD-topic.tmp files</cc>
+├── contexts/          <cc># dev.md review.md research.md</cc>
+└── settings.json      <cc># model, env, disabled MCPs</cc></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     P9 · RESEARCH-FIRST — CONCEPT
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-17" data-principle="P9" data-title="Research-First">
+  <div class="slide-header">
+    <div class="slide-num">P9 · 17/18</div>
+    <div class="slide-principle-tag tag-p9">Research-First</div>
+    <div class="slide-header-text">
+      <h2>Always Search Before You Code</h2>
+      <div class="tagline">Coding with outdated docs, reinventing solved patterns, or missing library features — all preventable with one discipline: research first, always.</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card">
+        <div class="card-label">The search-first workflow</div>
+        <div style="display:flex;flex-direction:column;gap:0;margin-top:4px;">
+          <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:center;">
+            <span style="font-family:var(--mono);font-size:10px;background:var(--surface2);border:1px solid var(--border);padding:2px 6px;border-radius:3px;color:var(--text-3);flex-shrink:0;">01</span>
+            <span style="font-size:13px;color:var(--text-2);">Run <code style="font-family:var(--mono);font-size:11px;">/search-first</code> before implementing any new feature or integrating any library</span>
+          </div>
+          <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:center;">
+            <span style="font-family:var(--mono);font-size:10px;background:var(--surface2);border:1px solid var(--border);padding:2px 6px;border-radius:3px;color:var(--text-3);flex-shrink:0;">02</span>
+            <span style="font-size:13px;color:var(--text-2);">Find the docs page — add <code style="font-family:var(--mono);font-size:11px;">/llms.txt</code> to the URL for an LLM-optimized version</span>
+          </div>
+          <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:center;">
+            <span style="font-family:var(--mono);font-size:10px;background:var(--surface2);border:1px solid var(--border);padding:2px 6px;border-radius:3px;color:var(--text-3);flex-shrink:0;">03</span>
+            <span style="font-size:13px;color:var(--text-2);">Feed the llms.txt directly to the agent as context before writing any code</span>
+          </div>
+          <div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);align-items:center;">
+            <span style="font-family:var(--mono);font-size:10px;background:var(--surface2);border:1px solid var(--border);padding:2px 6px;border-radius:3px;color:var(--text-3);flex-shrink:0;">04</span>
+            <span style="font-size:13px;color:var(--text-2);">Use the <code style="font-family:var(--mono);font-size:11px;">docs-lookup</code> agent for API verification during implementation</span>
+          </div>
+          <div style="display:flex;gap:12px;padding:10px 0;align-items:center;">
+            <span style="font-family:var(--mono);font-size:10px;background:var(--surface2);border:1px solid var(--border);padding:2px 6px;border-radius:3px;color:var(--text-3);flex-shrink:0;">05</span>
+            <span style="font-size:13px;color:var(--text-2);">Compact after research phase — before implementation — so research context doesn't pollute</span>
+          </div>
+        </div>
+      </div>
+      <div class="card accent">
+        <div class="card-label">llms.txt — LLM-optimized documentation</div>
+        <p style="font-size:13px;line-height:1.75;margin-bottom:8px;">Many documentation sites now expose <code style="font-family:var(--mono);font-size:11px;background:var(--accent-bg);padding:1px 4px;border-radius:3px;">/llms.txt</code> — a clean, structured version of their docs optimized for AI consumption. No navigation, no ads, just the content.</p>
+        <div style="font-family:var(--mono);font-size:11px;background:var(--accent-bg);padding:8px;border-radius:5px;color:var(--text-2);line-height:1.7;">https://helius.dev/docs/llms.txt<br>https://supabase.com/docs/llms.txt<br>https://vercel.com/docs/llms.txt</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="card">
+        <div class="card-label">The two-instance research setup</div>
+        <p style="font-size:13px;line-height:1.7;margin-bottom:10px;">For new projects: Instance 1 builds scaffolding. Instance 2 runs deep research — PRD, architecture diagrams, documentation clips. Research feeds implementation, never the other way.</p>
+        <div style="font-family:var(--mono);font-size:11px;background:var(--surface2);padding:10px;border-radius:5px;color:var(--text-2);line-height:1.7;">Instance 2 output:
+→ PRD.md
+→ architecture.md (mermaid)
+→ docs-clips/ (llms.txt extracts)
+→ api-reference.md</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Context7 — live documentation MCP</div>
+        <p style="font-size:13px;line-height:1.7;">When you need specific API reference mid-implementation rather than upfront: Context7 MCP pulls live documentation directly into context. Use this when Claude is using deprecated syntax or getting API shapes wrong.</p>
+        <div style="font-family:var(--mono);font-size:11px;background:var(--surface2);padding:8px;border-radius:5px;margin-top:8px;color:var(--text-2);"># Enable only when needed — disable when done<br># context7 in disabledMcpServers when not active</div>
+      </div>
+      <div class="cta-box" style="margin-top:0;">
+        <div class="cta-icon">⚡</div>
+        <div class="cta-content">
+          <div class="cta-label">Do This Now</div>
+          <div class="cta-title">Create a research-first skill</div>
+          <pre style="font-family:var(--mono);font-size:10px;background:var(--code-bg);padding:10px;border-radius:5px;margin:8px 0;color:var(--code-text);">---
+name: search-first
+description: Research before writing code. Check for existing
+  libraries, patterns, and docs before implementing.
+---
+When activated:
+1. Identify libraries and APIs involved
+2. Check library-docs-domain/llms.txt if it exists
+3. Fetch relevant documentation sections
+4. Read existing patterns in this codebase
+5. ONLY THEN begin implementation</pre>
+          <div class="tool-cli">
+            <ul class="cta-steps">
+              <li>Save as ~/.claude/skills/search-first/SKILL.md</li>
+              <li>Activate with: /search-first before your next feature task</li>
+              <li>Full search-first skill + docs-lookup agent → <a href="https://github.com/c-westendorf/cursor_onboarding/tree/main/010-harness-patterns/examples/skills/" style="color:var(--green);">companion repo / skills/</a></li>
+            </ul>
+          </div>
+          <div class="tool-vscode" style="display:none;">
+            <div class="vscode-note">Same format — Claude extension reads ~/.claude/skills/. Type /search-first in the VS Code chat to activate it.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ P9 DEEP DIVE ═══ -->
+<div class="slide" id="slide-18" data-principle="P9 ↗" data-title="Research-First — Config">
+  <div class="slide-header">
+    <div class="slide-num">P9 · 18/18</div>
+    <div class="slide-principle-tag tag-deep">Deep Dive</div>
+    <div class="slide-header-text">
+      <h2>Research-First — Skill & Agent Config</h2>
+      <div class="tagline">The search-first skill, docs-lookup agent, and research context mode.</div>
+    </div>
+  </div>
+  <div class="two-col">
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">~/.claude/skills/search-first/README.md</span></div>
+        <pre><cc>---</cc>
+<ck>name</ck>: <cs>search-first</cs>
+<ck>description</ck>: <cs>Research-before-coding workflow. Always invoke
+  before implementing any new feature or integration.</cs>
+<cc>---</cc>
+
+<ck>## Before writing any code, always:</ck>
+
+<cn>1</cn>. Search for existing patterns in the codebase
+   - Are there utilities that already do this?
+   - Is there a similar pattern in another module?
+
+<cn>2</cn>. Search for library documentation
+   - Check /llms.txt on the library's docs site
+   - Look for the exact API shape, not estimated
+
+<cn>3</cn>. Search for known issues or gotchas
+   - GitHub issues, Stack Overflow, changelogs
+   - Specifically: breaking changes in recent versions
+
+<cn>4</cn>. Summarize findings BEFORE implementation
+   - Output: research-summary.md
+   - Then compact — start fresh for implementation</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">~/.claude/agents/docs-lookup.md</span></div>
+        <pre><cc>---</cc>
+<ck>name</ck>: <cs>docs-lookup</cs>
+<ck>description</ck>: <cs>Documentation and API verification. Invoke
+  when Claude is using potentially outdated syntax.</cs>
+<ck>tools</ck>: [<cs>"WebSearch"</cs>, <cs>"WebFetch"</cs>, <cs>"Read"</cs>]
+<ck>model</ck>: <cs>haiku</cs>
+<cc>---</cc>
+
+You verify API shapes and documentation.
+Given a library name and function/method:
+<cn>1</cn>. Find the official docs page
+<cn>2</cn>. Check /llms.txt if available
+<cn>3</cn>. Return the exact current API signature
+<cn>4</cn>. Note any breaking changes in last 2 versions
+
+Output: exact API shape + migration notes if any.
+Do not suggest usage — just return the facts.</pre>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:18px;">
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">~/.claude/contexts/research.md</span></div>
+        <pre><cc># Research Mode Context</cc>
+<cc># Use: claude --system-prompt "$(cat research.md)"</cc>
+
+You are in exploration mode — no code changes allowed.
+
+Priority:
+<cn>1</cn>. Understand before acting
+<cn>2</cn>. Document findings in research-summary.md
+<cn>3</cn>. Create architecture diagrams (mermaid)
+<cn>4</cn>. Compile documentation clips with citations
+
+Rules in this mode:
+- NEVER modify files
+- NEVER write implementation code
+- Read widely before narrowing
+- Always cite sources in summaries
+
+When research is complete, output a handoff brief:
+- What exists (with file paths)
+- What's missing (gaps to fill)
+- Recommended approach (with rationale)
+- Risks and unknowns</pre>
+      </div>
+      <div class="code-block">
+        <div class="code-header"><div class="dots"><div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div></div><span class="filename">llms.txt pattern in practice</span></div>
+        <pre><cc># Many docs sites support this — try it</cc>
+curl https://supabase.com/docs/llms.txt | head -50
+curl https://helius.dev/docs/llms.txt | head -50
+
+<cc># Feed directly to Claude for accurate API usage</cc>
+claude --system-prompt "$(curl -s \
+  https://supabase.com/docs/llms.txt)"
+
+<cc># Or reference inline with @</cc>
+<cc># @https://supabase.com/docs/llms.txt</cc>
+
+<cc># Sites without llms.txt: use Firecrawl MCP</cc>
+<cc># or /search-first with WebFetch on docs pages</cc></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<!-- FOOTER -->
+<div class="slide-footer">
+  <div class="footer-left">ACT 2 OF 3 · THE 9 PRINCIPLES</div>
+  <div class="footer-right" id="dots"></div>
+</div>
+
+<div class="keyboard-hint">
+  <div class="key">←</div>
+  <div class="key">→</div>
+</div>
+
+<script>
+const TOTAL = 18;
+let current = 1;
+
+const principleMap = {
+  1:'P1', 2:'P1 ↗', 3:'P2', 4:'P2 ↗', 5:'P3', 6:'P3 ↗',
+  7:'P4', 8:'P4 ↗', 9:'P5', 10:'P5 ↗', 11:'P6', 12:'P6 ↗',
+  13:'P7', 14:'P7 ↗', 15:'P8', 16:'P8 ↗', 17:'P9', 18:'P9 ↗'
+};
+
+function render() {
+  document.querySelectorAll('.slide').forEach((s,i) => {
+    s.classList.toggle('active', i+1 === current);
+  });
+  document.getElementById('counter').textContent = current + ' / ' + TOTAL;
+  document.getElementById('progress').style.width = (current/TOTAL*100) + '%';
+  document.getElementById('btn-prev').disabled = current === 1;
+  document.getElementById('btn-next').disabled = current === TOTAL;
+
+  const slide = document.getElementById('slide-' + current);
+  if (slide) {
+    document.getElementById('principle-badge').textContent = slide.dataset.principle || '';
+    document.getElementById('slide-title').textContent = slide.dataset.title || '';
+  }
+
+  const dots = document.getElementById('dots');
+  dots.innerHTML = '';
+  for (let i = 1; i <= TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'footer-dot' + (i === current ? ' active' : '');
+    dots.appendChild(d);
+  }
+}
+
+function go(dir) {
+  const next = current + dir;
+  if (next < 1 || next > TOTAL) return;
+  current = next;
+  render();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+});
+
+render();
+</script>
+</body>
+</html>
+  </div>
+</div>
+
+<!-- ACT 3: ACTIVATION -->
+<div id="act-3" class="act">
+  <div id="deck-3" class="deck">
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 1: TIER FRAMEWORK — Where to Start
+═══════════════════════════════════════════════════════════ -->
+<div class="slide active" id="slide-1">
+  <div class="slide-header">
+    <div class="slide-num">01 / 03</div>
+    <div class="slide-header-text">
+      <h2>Start Here. Graduate When Ready.</h2>
+      <div class="tagline">Tier 1 patterns have a low skill floor and high return. Master these before Tier 2. Most experienced practitioners use Tier 1 for 80% of their work.</div>
+    </div>
+  </div>
+
+  <div class="two-col" style="align-items:start;">
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="tier-card">
+        <div class="tier-header">
+          <span class="tier-badge tier-1-badge">Tier 1 — Start Here</span>
+          <div class="tier-header-text">
+            <h3>Low skill floor · High return · Build these first</h3>
+            <p>Each of these is a direct force multiplier with minimal setup overhead</p>
+          </div>
+        </div>
+        <div class="tier-body">
+          <div class="tier-item">
+            <div class="tier-item-dot tier-1-dot"></div>
+            <div class="tier-item-text">
+              <h4>Subagents</h4>
+              <p>Direct buff for preventing context rot and ad-hoc specialization. Half the complexity of multi-agent, half the risk, still major gains. Start here before any parallelization.</p>
+            </div>
+          </div>
+          <div class="tier-item">
+            <div class="tier-item-dot tier-1-dot"></div>
+            <div class="tier-item-text">
+              <h4>Metaprompting (planning first)</h4>
+              <p>"I take 3 minutes to prompt a 20-minute task." Direct buff — improves first-attempt success rates and sanity-checks assumptions before any code is written.</p>
+            </div>
+          </div>
+          <div class="tier-item">
+            <div class="tier-item-dot tier-1-dot"></div>
+            <div class="tier-item-text">
+              <h4>Rules + Hooks (structured primitives)</h4>
+              <p>Always-follow standards and trigger-based automations. Install once, benefit on every session indefinitely. Lowest effort, highest compound return.</p>
+            </div>
+          </div>
+          <div class="tier-item" style="border:none;">
+            <div class="tier-item-dot tier-1-dot"></div>
+            <div class="tier-item-text">
+              <h4>Memory persistence</h4>
+              <p>Session state files + 3 lifecycle hooks. Eliminates starting from zero each day. Most impactful change for daily productivity after rules/hooks.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px;">
+      <div class="tier-card">
+        <div class="tier-header">
+          <span class="tier-badge tier-2-badge">Tier 2 — Graduate Here</span>
+          <div class="tier-header-text">
+            <h3>High skill floor · High variance · Only when needed</h3>
+            <p>High upside but easy to misapply. Don't start here.</p>
+          </div>
+        </div>
+        <div class="tier-body">
+          <div class="tier-item">
+            <div class="tier-item-dot tier-2-dot"></div>
+            <div class="tier-item-text">
+              <h4>Long-running agents</h4>
+              <p>Need to understand the shape of a 15-min vs 4-hour task. Takes significant trial-and-error to calibrate. Only useful once Tier 1 is solid.</p>
+            </div>
+          </div>
+          <div class="tier-item">
+            <div class="tier-item-dot tier-2-dot"></div>
+            <div class="tier-item-text">
+              <h4>Parallel multi-agent</h4>
+              <p>Very high variance — only useful on highly complex or well-segmented tasks. "If 2 tasks take 10 min and you spend time merging, it's counterproductive."</p>
+            </div>
+          </div>
+          <div class="tier-item">
+            <div class="tier-item-dot tier-2-dot"></div>
+            <div class="tier-item-text">
+              <h4>Role-based multi-agent</h4>
+              <p>Models evolve too fast for hard-coded role heuristics unless the arbitrage is very high. Hard to test, easy to over-engineer.</p>
+            </div>
+          </div>
+          <div class="tier-item" style="border:none;">
+            <div class="tier-item-dot tier-2-dot"></div>
+            <div class="tier-item-text">
+              <h4>Computer use agents</h4>
+              <p>Very early paradigm. Requires significant wrangling. Useful in narrow scenarios — don't make it a default workflow pattern yet.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card accent">
+        <div class="card-label">The graduation test</div>
+        <p>You're ready for Tier 2 when: Tier 1 is fully installed and running smoothly, you have a specific use case that Tier 1 can't address, and you can clearly define the scope boundaries that prevent parallel instances from interfering.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 2: ACTIVATION CHECKLIST
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-2">
+  <div class="slide-header">
+    <div class="slide-num">02 / 03</div>
+    <div class="slide-header-text">
+      <h2>Your Activation Checklist</h2>
+      <div class="tagline">Day 1 → Week 1 → Month 1. Do these in order. Check them off as you go.</div>
+    </div>
+  </div>
+
+  <div class="two-col" style="align-items:start;">
+    <div>
+      <!-- DAY 1 -->
+      <div class="checklist-phase">
+        <div class="phase-header">
+          <span class="phase-badge phase-d1">Day 1</span>
+          <span class="phase-title">Foundation install</span>
+          <span class="phase-sub">~30 min total</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Create harness directory structure</div>
+            <div class="check-cmd">mkdir -p ~/.claude/rules ~/.claude/agents ~/.claude/skills ~/.claude/commands ~/.claude/sessions</div>
+          </div>
+          <span class="check-p-tag" style="background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border);">P8</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Clone the companion pattern library (optional)</div>
+            <div class="check-cmd">git clone https://github.com/c-westendorf/cursor_onboarding &amp;&amp; cd ~/cursor_onboarding/010-harness-patterns</div>
+          </div>
+          <span class="check-p-tag" style="background:var(--surface2);color:var(--text-3);border:1px solid var(--border);">Setup</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Add 3 lines to settings.json (token control)</div>
+            <div class="check-cmd">model: sonnet · MAX_THINKING_TOKENS: 10000 · AUTOCOMPACT: 50</div>
+          </div>
+          <span class="check-p-tag" style="background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border);">P1</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Create a rules file for your language stack</div>
+            <div class="check-cmd">cp companion-repo/examples/rules/testing.md ~/.claude/rules/  (or write your own — see P8)</div>
+          </div>
+          <span class="check-p-tag" style="background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border);">P8</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Install 5 core agents</div>
+            <div class="check-cmd">Create ~/.claude/agents/code-reviewer.md — see companion repo / examples/agents/ for templates</div>
+          </div>
+          <span class="check-p-tag" style="background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);">P4</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Run your first security scan</div>
+            <div class="check-cmd">Create ~/.claude/hooks/secret-scan.js — see companion repo / examples/hooks/</div>
+            <div class="check-note">Fix any critical (grade F) findings before continuing</div>
+          </div>
+          <span class="check-p-tag" style="background:#F0EEF8;color:#3D2B7A;border:1px solid #B8AEDE;">P7</span>
+        </div>
+      </div>
+
+      <!-- WEEK 1 -->
+      <div class="checklist-phase">
+        <div class="phase-header">
+          <span class="phase-badge phase-w1">Week 1</span>
+          <span class="phase-title">Memory &amp; learning systems</span>
+          <span class="phase-sub">~1–2 hrs total</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Install 3 memory lifecycle hooks</div>
+            <div class="check-cmd">Create session-end.js, session-start.js, pre-compact.js — see companion repo / examples/hooks/</div>
+          </div>
+          <span class="check-p-tag" style="background:#E8F0F8;color:#2E6B9E;border:1px solid #A8C8E8;">P2</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Install continuous learning Stop hook</div>
+            <div class="check-cmd">Create ~/.claude/hooks/session-end.js — see companion repo / examples/hooks/session-end.js</div>
+          </div>
+          <span class="check-p-tag" style="background:#F0EAF5;color:#6B3A8E;border:1px solid #C8A8E8;">P3</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Add PostToolUse verification hook</div>
+            <div class="check-cmd">tsc --noEmit after .ts edits · pytest after .py edits</div>
+          </div>
+          <span class="check-p-tag" style="background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);">P5</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Install search-first skill</div>
+            <div class="check-cmd">Create ~/.claude/skills/search-first/SKILL.md — see companion repo / examples/skills/search-first/</div>
+            <div class="check-note">Run /search-first before your next feature — note the difference</div>
+          </div>
+          <span class="check-p-tag" style="background:#FDF0E8;color:#8B4A1A;border:1px solid #E8C0A0;">P9</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Set up first worktree for parallel questions</div>
+            <div class="check-cmd">git worktree add ../scratch scratch && rename both chats</div>
+          </div>
+          <span class="check-p-tag" style="background:#FDEAEA;color:#8B1A1A;border:1px solid #E8B4B4;">P6</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">End-of-week: run /learn-eval on something you solved</div>
+            <div class="check-cmd">/learn-eval then /instinct-status</div>
+            <div class="check-note">This is the first loop of continuous learning in action</div>
+          </div>
+          <span class="check-p-tag" style="background:#F0EAF5;color:#6B3A8E;border:1px solid #C8A8E8;">P3</span>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <!-- MONTH 1 -->
+      <div class="checklist-phase">
+        <div class="phase-header">
+          <span class="phase-badge phase-m1">Month 1</span>
+          <span class="phase-title">Optimization &amp; compounding</span>
+          <span class="phase-sub">Ongoing</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Run /skill-create on your main repo</div>
+            <div class="check-cmd">/skill-create --instincts</div>
+            <div class="check-note">Extracts patterns from your git history — custom skills from your own work</div>
+          </div>
+          <span class="check-p-tag" style="background:#F0EAF5;color:#6B3A8E;border:1px solid #C8A8E8;">P3</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Run /evolve to cluster instincts into skills</div>
+            <div class="check-cmd">/evolve</div>
+            <div class="check-note">After 5+ instincts, evolve creates a proper named, reusable skill</div>
+          </div>
+          <span class="check-p-tag" style="background:#F0EAF5;color:#6B3A8E;border:1px solid #C8A8E8;">P3</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Benchmark a skill vs. no-skill (worktree test)</div>
+            <div class="check-cmd">Two worktrees · same task · git diff at the end · check /cost</div>
+          </div>
+          <span class="check-p-tag" style="background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);">P5</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Audit and prune your MCP list</div>
+            <div class="check-cmd">Keep ≤10 active per project · add unused MCPs to disabledMcpServers</div>
+          </div>
+          <span class="check-p-tag" style="background:var(--accent-bg);color:var(--accent);border:1px solid var(--accent-border);">P1</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Create 3 context mode aliases (dev/review/research)</div>
+            <div class="check-cmd">alias cc-dev='claude --system-prompt "$(cat dev.md)"'</div>
+          </div>
+          <span class="check-p-tag" style="background:#E8F0F8;color:#2E6B9E;border:1px solid #A8C8E8;">P2</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Re-run secret scan after all hooks are installed</div>
+            <div class="check-cmd">node ~/.claude/hooks/secret-scan.js — full adversarial check once harness is complete</div>
+            <div class="check-note">Full adversarial scan once harness is complete</div>
+          </div>
+          <span class="check-p-tag" style="background:#F0EEF8;color:#3D2B7A;border:1px solid #B8AEDE;">P7</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Export instincts and share with your team</div>
+            <div class="check-cmd">/instinct-export > team-instincts.json</div>
+            <div class="check-note">The harness becomes a team asset — not just personal config</div>
+          </div>
+          <span class="check-p-tag" style="background:#F0EAF5;color:#6B3A8E;border:1px solid #C8A8E8;">P3</span>
+        </div>
+        <div class="check-item" onclick="toggle(this)" style="border:none;">
+          <div class="check-box"></div>
+          <div class="check-body">
+            <div class="check-title">Graduate to Tier 2 (if Tier 1 is solid)</div>
+            <div class="check-note">Only when: hooks run cleanly, memory persists reliably, subagents return useful outputs, and you have a specific use case Tier 1 can't address</div>
+          </div>
+          <span class="check-p-tag" style="background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-border);">Tier 2</span>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:8px;">
+        <div class="card-label">Progress tracker</div>
+        <div style="display:flex;gap:16px;align-items:center;">
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+              <span style="font-size:12px;color:var(--text-2);">Day 1</span>
+              <span id="d1-count" style="font-family:var(--mono);font-size:11px;color:var(--text-3);">0/6</span>
+            </div>
+            <div style="height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;">
+              <div id="d1-bar" style="height:100%;background:var(--accent);border-radius:2px;width:0%;transition:width 0.3s;"></div>
+            </div>
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+              <span style="font-size:12px;color:var(--text-2);">Week 1</span>
+              <span id="w1-count" style="font-family:var(--mono);font-size:11px;color:var(--text-3);">0/6</span>
+            </div>
+            <div style="height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;">
+              <div id="w1-bar" style="height:100%;background:var(--green);border-radius:2px;width:0%;transition:width 0.3s;"></div>
+            </div>
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+              <span style="font-size:12px;color:var(--text-2);">Month 1</span>
+              <span id="m1-count" style="font-family:var(--mono);font-size:11px;color:var(--text-3);">0/8</span>
+            </div>
+            <div style="height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;">
+              <div id="m1-bar" style="height:100%;background:var(--border-strong);border-radius:2px;width:0%;transition:width 0.3s;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLIDE 3: CLOSING
+═══════════════════════════════════════════════════════════ -->
+<div class="slide" id="slide-3">
+  <div class="slide-header">
+    <div class="slide-num">03 / 03</div>
+    <div class="slide-header-text">
+      <h2>You Now Have the System</h2>
+      <div class="tagline">The harness compounds. Every session adds to it. Every model upgrade makes it more powerful.</div>
+    </div>
+  </div>
+
+  <div class="col-6040" style="align-items:start;">
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div style="padding:28px 0 8px;">
+        <h2 class="close-title">The investment<br>you made today<br>returns <em>forever.</em></h2>
+      </div>
+
+      <div class="quote-block">
+        <div class="quote-text">"Early on, I spent time building reusable workflows and patterns. Tedious to build, but this had a wild compounding effect as models and agent harnesses improved. The best part: all these workflows transfer to other agents. Investment in patterns beats investment in model-specific tricks every time."</div>
+        <div class="quote-attr">@omarsar0 — ML researcher</div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">What you built today</div>
+        <div class="recap-grid">
+          <div class="recap-item"><div class="recap-num">P1 · Token Economics</div><div class="recap-name">settings.json</div><div class="recap-action">Model routing, cost control configured</div></div>
+          <div class="recap-item"><div class="recap-num">P2 · Memory</div><div class="recap-name">3 lifecycle hooks</div><div class="recap-action">Sessions persist automatically</div></div>
+          <div class="recap-item"><div class="recap-num">P3 · Learning</div><div class="recap-name">Stop hook</div><div class="recap-action">Instinct capture on every session</div></div>
+          <div class="recap-item"><div class="recap-num">P4 · Agents</div><div class="recap-name">5 core agents</div><div class="recap-action">Scoped delegation ready</div></div>
+          <div class="recap-item"><div class="recap-num">P5 · Evals</div><div class="recap-name">PostToolUse verify</div><div class="recap-action">Auto-check after every edit</div></div>
+          <div class="recap-item"><div class="recap-num">P6 · Parallel</div><div class="recap-name">First worktree</div><div class="recap-action">Parallel questions without conflicts</div></div>
+          <div class="recap-item"><div class="recap-num">P7 · Security</div><div class="recap-name">AgentShield scan</div><div class="recap-action">Harness vulnerabilities found + fixed</div></div>
+          <div class="recap-item"><div class="recap-num">P8 · Primitives</div><div class="recap-name">Rules installed</div><div class="recap-action">Language stack standards active</div></div>
+          <div class="recap-item"><div class="recap-num">P9 · Research</div><div class="recap-name">search-first skill</div><div class="recap-action">Research-before-code enforced</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:20px;">
+      <div class="card accent">
+        <div class="card-label">Companion reference library</div>
+        <p style="margin-bottom:10px;">All pattern examples from this presentation live in the harness-patterns companion repo — hooks, agents, rules, skills, and settings ready to copy.</p>
+        <div style="font-family:var(--mono);font-size:12px;background:var(--accent-bg);padding:10px;border-radius:5px;color:var(--accent);line-height:1.7;"><a href="https://github.com/c-westendorf/cursor_onboarding/tree/main/010-harness-patterns" style="color:var(--accent);text-decoration:none;">github.com/c-westendorf/cursor_onboarding<br>└── 010-harness-patterns/</a><br><br>Self-improving skills:<br><a href="https://github.com/c-westendorf/self-improving-skills" style="color:var(--accent);text-decoration:none;">github.com/c-westendorf/self-improving-skills</a></div>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Three things to do in the next 24 hours</div>
+        <div class="check-item" onclick="toggle(this)" style="padding:8px 0;">
+          <div class="check-box"></div>
+          <div class="check-body"><div class="check-title" style="font-size:13px;">Complete the Day 1 checklist (slide 2)</div></div>
+        </div>
+        <div class="check-item" onclick="toggle(this)" style="padding:8px 0;">
+          <div class="check-box"></div>
+          <div class="check-body"><div class="check-title" style="font-size:13px;">Run /search-first before your next feature</div></div>
+        </div>
+        <div class="check-item" onclick="toggle(this)" style="padding:8px 0;border:none;">
+          <div class="check-box"></div>
+          <div class="check-body"><div class="check-title" style="font-size:13px;">End today's session with /learn-eval</div></div>
+        </div>
+      </div>
+
+      <div style="text-align:center;padding:12px 0;">
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text-3);letter-spacing:0.1em;text-transform:uppercase;">Agent Harness Optimization · Pattern-first · Built for daily practice</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /deck -->
+
+<div class="slide-footer">
+  <div class="footer-left">ACT 3 OF 3 · ACTIVATION</div>
+  <div class="footer-right" id="dots"></div>
+</div>
+
+<div class="keyboard-hint">
+  <div class="key">←</div>
+  <div class="key">→</div>
+</div>
+
+<script>
+const TOTAL = 3;
+let current = 1;
+
+function toggle(item) {
+  const box = item.querySelector('.check-box');
+  box.classList.toggle('checked');
+  updateProgress();
+}
+
+function updateProgress() {
+  const slide2 = document.getElementById('slide-2');
+  const phases = slide2.querySelectorAll('.checklist-phase');
+  
+  // Day 1 (phase 0)
+  const d1items = phases[0].querySelectorAll('.check-item');
+  const d1done = phases[0].querySelectorAll('.check-box.checked').length;
+  document.getElementById('d1-count').textContent = d1done + '/' + d1items.length;
+  document.getElementById('d1-bar').style.width = (d1done / d1items.length * 100) + '%';
+
+  // Week 1 (phase 1)
+  const w1items = phases[1].querySelectorAll('.check-item');
+  const w1done = phases[1].querySelectorAll('.check-box.checked').length;
+  document.getElementById('w1-count').textContent = w1done + '/' + w1items.length;
+  document.getElementById('w1-bar').style.width = (w1done / w1items.length * 100) + '%';
+
+  // Month 1 (phase 2)
+  const m1items = phases[2].querySelectorAll('.check-item');
+  const m1done = phases[2].querySelectorAll('.check-box.checked').length;
+  document.getElementById('m1-count').textContent = m1done + '/' + m1items.length;
+  document.getElementById('m1-bar').style.width = (m1done / m1items.length * 100) + '%';
+}
+
+function render() {
+  document.querySelectorAll('.slide').forEach((s,i) => {
+    s.classList.toggle('active', i+1 === current);
+  });
+  document.getElementById('counter').textContent = current + ' / ' + TOTAL;
+  document.getElementById('progress').style.width = (current/TOTAL*100) + '%';
+  document.getElementById('btn-prev').disabled = current === 1;
+  document.getElementById('btn-next').disabled = current === TOTAL;
+
+  const dots = document.getElementById('dots');
+  dots.innerHTML = '';
+  for (let i = 1; i <= TOTAL; i++) {
+    const d = document.createElement('div');
+    d.className = 'footer-dot' + (i === current ? ' active' : '');
+    dots.appendChild(d);
+  }
+}
+
+function go(dir) {
+  const next = current + dir;
+  if (next < 1 || next > TOTAL) return;
+  current = next;
+  render();
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+});
+
+render();
+</script>
+</body>
+</html>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<div class="slide-footer">
+  <div class="footer-left" id="footer-text">ACT 1 OF 3 · AGENT HARNESS OPTIMIZATION</div>
+  <div class="footer-right" id="dots"></div>
+</div>
+
+<!-- KEYBOARD HINT -->
+<div class="keyboard-hint">
+  <div class="key">←</div>
+  <div class="key">→</div>
+  <div class="key-label">navigate</div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────
+const TOTALS = { 1: 4, 2: 18, 3: 3 };
+const ACT_LABELS = { 1: 'ACT 1 OF 3', 2: 'ACT 2 OF 3', 3: 'ACT 3 OF 3' };
+let currentAct = 1;
+const currentSlide = { 1: 1, 2: 1, 3: 1 };
+let selectedTool = 'cli';
+
+// ── Tool selector ──────────────────────────────────────────────────────
+function setTool(tool) {
+  selectedTool = tool;
+  document.querySelectorAll('.tool-cli').forEach(el => {
+    el.style.display = tool === 'cli' ? '' : 'none';
+  });
+  document.querySelectorAll('.tool-vscode').forEach(el => {
+    el.style.display = tool === 'vscode' ? '' : 'none';
+  });
+  document.getElementById('btn-cli').classList.toggle('active', tool === 'cli');
+  document.getElementById('btn-vscode').classList.toggle('active', tool === 'vscode');
+}
+
+// ── Act switching ──────────────────────────────────────────────────────
+function switchAct(act) {
+  document.querySelectorAll('.act').forEach(a => a.classList.remove('active'));
+  document.getElementById('act-' + act).classList.add('active');
+  document.querySelectorAll('.act-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector('[data-act="' + act + '"]').classList.add('active');
+  currentAct = act;
+  renderAct();
+}
+
+// ── Navigation ─────────────────────────────────────────────────────────
+function go(dir) {
+  const next = currentSlide[currentAct] + dir;
+  const total = TOTALS[currentAct];
+  if (next < 1) {
+    if (currentAct > 1) {
+      const prevAct = currentAct - 1;
+      switchAct(prevAct);
+      currentSlide[prevAct] = TOTALS[prevAct];
+      renderAct();
+    }
+    return;
+  }
+  if (next > total) {
+    if (currentAct < 3) { switchAct(currentAct + 1); }
+    return;
+  }
+  currentSlide[currentAct] = next;
+  renderAct();
+}
+
+// ── Render ─────────────────────────────────────────────────────────────
+function renderAct() {
+  const act = currentAct;
+  const slide = currentSlide[act];
+  const total = TOTALS[act];
+
+  // Show correct slide
+  const deck = document.getElementById('deck-' + act);
+  deck.querySelectorAll('.slide').forEach((s, i) => {
+    s.classList.toggle('active', i + 1 === slide);
+  });
+
+  // Nav counter + progress
+  document.getElementById('counter').textContent = slide + ' / ' + total;
+  document.getElementById('progress').style.width = (slide / total * 100) + '%';
+  document.getElementById('btn-prev').disabled = currentAct === 1 && slide === 1;
+  document.getElementById('btn-next').disabled = currentAct === 3 && slide === total;
+  document.getElementById('act-badge').textContent = 'ACT ' + act;
+  document.getElementById('footer-text').textContent = ACT_LABELS[act] + ' · AGENT HARNESS OPTIMIZATION';
+
+  // Footer dots
+  const dots = document.getElementById('dots');
+  dots.innerHTML = '';
+  for (let i = 1; i <= total; i++) {
+    const d = document.createElement('div');
+    d.className = 'footer-dot' + (i === slide ? ' active' : '');
+    dots.appendChild(d);
+  }
+}
+
+// ── Keyboard ───────────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown') go(1);
+  if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   go(-1);
+});
+
+// ── Act 3 checkboxes ───────────────────────────────────────────────────
+function toggle(el) { el.classList.toggle('checked'); }
+
+// ── Init ───────────────────────────────────────────────────────────────
+renderAct();
+setTool('cli');
+</script>
+</body>
+</html>
